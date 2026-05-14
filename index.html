@@ -60,7 +60,6 @@
             <a href="#deviceExamples" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-cyan-300 px-5 py-3 text-sm font-black text-slate-950 transition hover:-translate-y-0.5 hover:bg-cyan-200 sm:w-auto">选择设备</a>
             <a href="#safetyNotice" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-amber-300/35 bg-amber-300/10 px-5 py-3 text-sm font-black text-amber-100 transition hover:-translate-y-0.5 hover:bg-amber-300/15 sm:w-auto">查看安全说明</a>
           </div>
-          <p id="scanQrTip" class="mt-3 hidden max-w-2xl rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-3 text-xs leading-5 text-cyan-50/90">请使用微信、浏览器或手机系统自带的扫码功能扫描设备旁二维码。当前演示环境如无法直接调用摄像头，可在右侧或下方选择设备示例进入。</p>
         </section>
 
         <section id="deviceExamples" class="min-w-0 rounded-3xl border border-cyan-300/20 bg-slate-900/75 p-4 shadow-glow backdrop-blur sm:p-5">
@@ -80,6 +79,27 @@
       </footer>
     </section>
   </main>
+
+  <div id="scannerModal" class="fixed inset-0 z-50 hidden bg-slate-950/90 px-4 py-6 backdrop-blur">
+    <div class="mx-auto flex min-h-full w-full max-w-lg items-center justify-center">
+      <section class="w-full overflow-hidden rounded-3xl border border-cyan-300/30 bg-slate-900 shadow-glow">
+        <div class="flex items-start justify-between gap-4 border-b border-slate-700 p-4">
+          <div>
+            <p class="text-sm font-semibold text-cyan-200">设备二维码扫描</p>
+            <h2 class="mt-1 text-2xl font-black text-white">对准设备二维码</h2>
+          </div>
+          <button id="closeScannerBtn" type="button" class="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-bold text-slate-100">关闭</button>
+        </div>
+        <div class="p-4">
+          <div class="relative aspect-[3/4] overflow-hidden rounded-2xl border border-cyan-300/25 bg-slate-950">
+            <video id="scannerVideo" class="h-full w-full object-cover" playsinline muted></video>
+            <div class="pointer-events-none absolute inset-8 rounded-2xl border-2 border-cyan-300/70 shadow-[0_0_28px_rgba(34,211,238,0.35)]"></div>
+          </div>
+          <p id="scannerStatus" class="mt-4 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-3 text-sm leading-6 text-cyan-50">正在准备摄像头...</p>
+        </div>
+      </section>
+    </div>
+  </div>
 
   <script>
     const fallbackDevices = [
@@ -127,12 +147,88 @@
       });
     }
 
-    function setupScanTip() {
+    let scannerStream = null;
+    let scannerActive = false;
+
+    function setScannerStatus(text, type = 'info') {
+      const status = document.querySelector('#scannerStatus');
+      const color = type === 'error'
+        ? 'border-red-300/25 bg-red-500/10 text-red-100'
+        : 'border-cyan-300/20 bg-cyan-300/10 text-cyan-50';
+      status.className = `mt-4 rounded-2xl border p-3 text-sm leading-6 ${color}`;
+      status.textContent = text;
+    }
+
+    function stopScanner() {
+      scannerActive = false;
+      if (scannerStream) {
+        scannerStream.getTracks().forEach(track => track.stop());
+        scannerStream = null;
+      }
+      document.querySelector('#scannerVideo').srcObject = null;
+      document.querySelector('#scannerModal').classList.add('hidden');
+    }
+
+    function openScannedUrl(rawValue) {
+      try {
+        const url = new URL(rawValue, window.location.href);
+        if (!url.pathname.endsWith('/device.html') && !url.pathname.endsWith('device.html')) {
+          setScannerStatus('未识别到设备页面链接，请扫描设备旁的专用二维码。', 'error');
+          return;
+        }
+        stopScanner();
+        window.location.href = url.href;
+      } catch (error) {
+        setScannerStatus('二维码内容不是有效链接，请重新扫描设备二维码。', 'error');
+      }
+    }
+
+    async function startScanner() {
+      const modal = document.querySelector('#scannerModal');
+      const video = document.querySelector('#scannerVideo');
+      modal.classList.remove('hidden');
+      setScannerStatus('正在请求摄像头权限...');
+
+      if (!('BarcodeDetector' in window)) {
+        setScannerStatus('当前浏览器不支持网页内扫码。请使用微信、手机相机或浏览器自带扫码功能扫描设备二维码。', 'error');
+        return;
+      }
+
+      try {
+        scannerStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' } },
+          audio: false
+        });
+        video.srcObject = scannerStream;
+        await video.play();
+        scannerActive = true;
+        setScannerStatus('请将设备二维码放入取景框内。');
+
+        const detector = new BarcodeDetector({ formats: ['qr_code'] });
+        const scan = async () => {
+          if (!scannerActive) return;
+          try {
+            const codes = await detector.detect(video);
+            if (codes.length > 0) {
+              openScannedUrl(codes[0].rawValue);
+              return;
+            }
+          } catch (error) {
+            setScannerStatus('扫码识别失败，请调整距离或光线后重试。', 'error');
+          }
+          window.requestAnimationFrame(scan);
+        };
+        scan();
+      } catch (error) {
+        setScannerStatus('无法打开摄像头。请允许浏览器摄像头权限，或使用微信/手机相机扫码。', 'error');
+      }
+    }
+
+    function setupQrScanner() {
       const button = document.querySelector('#scanQrBtn');
-      const tip = document.querySelector('#scanQrTip');
-      button.addEventListener('click', () => {
-        tip.classList.toggle('hidden');
-      });
+      const closeButton = document.querySelector('#closeScannerBtn');
+      button.addEventListener('click', startScanner);
+      closeButton.addEventListener('click', stopScanner);
     }
 
     function renderDevices(devices) {
@@ -153,7 +249,7 @@
 
     }
 
-    setupScanTip();
+    setupQrScanner();
     loadDevices().then(renderDevices);
   </script>
 </body>
