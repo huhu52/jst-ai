@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>贝尔赛事后台 - 登录</title>
+  <style>
+    :root {
+      --blue: #1688ff;
+      --blue-strong: #0f6bff;
+      --cyan: #4cc9df;
+      --ink: #213348;
+      --muted: #7b8a9d;
+      --line: #e7edf5;
+      --panel: rgba(255, 255, 255, 0.88);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 78% 33%, rgba(36, 166, 255, 0.34), transparent 28%),
+        radial-gradient(circle at 64% 60%, rgba(81, 227, 234, 0.24), transparent 30%),
+        linear-gradient(117deg, #f8fcff 0%, #edf8ff 45%, #cfeaff 100%);
+      overflow: hidden;
+    }
+
+    .page {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(360px, 560px) 1fr;
+      gap: 48px;
+      min-height: 100vh;
+      padding: 13vh 8vw 10vh;
+      isolation: isolate;
+    }
+
+    .page::before,
+    .page::after {
+      position: absolute;
+      content: "";
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .page::before {
+      right: -8vw;
+      bottom: 12vh;
+      width: 72vw;
+      height: 27vh;
+      border-radius: 50%;
+      border: 28px solid rgba(85, 190, 249, 0.2);
+      transform: rotate(-9deg);
+      filter: blur(0.2px);
+    }
+
+    .page::after {
+      left: -9vw;
+      bottom: 14vh;
+      width: 62vw;
+      height: 18vh;
+      border-radius: 50%;
+      border-bottom: 10px solid rgba(60, 184, 247, 0.28);
+      transform: rotate(-6deg);
+    }
+
+    .left {
+      align-self: center;
+      max-width: 480px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+      font-size: 29px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .mark {
+      position: relative;
+      width: 45px;
+      height: 45px;
+      color: var(--cyan);
+    }
+
+    .mark::before,
+    .mark::after {
+      position: absolute;
+      content: "";
+      border: 4px solid currentColor;
+      border-left-color: transparent;
+      border-radius: 50%;
+      transform: rotate(-34deg);
+    }
+
+    .mark::before {
+      left: 2px;
+      top: 6px;
+      width: 24px;
+      height: 20px;
+    }
+
+    .mark::after {
+      right: 3px;
+      bottom: 7px;
+      width: 25px;
+      height: 21px;
+      color: #1c7bff;
+    }
+
+    .card {
+      overflow: hidden;
+      border-radius: 15px;
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.86);
+      box-shadow: 0 22px 60px rgba(59, 136, 201, 0.16);
+      backdrop-filter: blur(14px);
+    }
+
+    .card-title {
+      margin: 0;
+      padding: 24px 32px 15px;
+      color: var(--blue-strong);
+      text-align: center;
+      font-size: 23px;
+      font-weight: 700;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .form {
+      padding: 21px 44px 35px;
+    }
+
+    .course-select {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+      padding: 4px;
+      border: 1px solid #dce9f8;
+      border-radius: 8px;
+      background: #f7fbff;
+    }
+
+    .course-option {
+      border: 0;
+      border-radius: 6px;
+      padding: 11px 8px;
+      background: transparent;
+      color: #596b80;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .course-option.active {
+      color: #fff;
+      background: linear-gradient(135deg, #1594ff, #0c66f5);
+      box-shadow: 0 8px 18px rgba(21, 129, 255, 0.24);
+    }
+
+    .field {
+      display: block;
+      margin-bottom: 15px;
+    }
+
+    .label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #2c3c4e;
+    }
+
+    .required {
+      color: #e43f3f;
+      margin-right: 2px;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    input {
+      display: block;
+      width: 100%;
+      height: 39px;
+      border: 1px solid #d9e4f0;
+      border-radius: 5px;
+      padding: 0 42px 0 14px;
+      color: #213348;
+      font-size: 14px;
+      background: rgba(255, 255, 255, 0.78);
+      outline: none;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 2px rgba(22, 136, 255, 0.13);
+    }
+
+    input::placeholder {
+      color: #a7b3c1;
+    }
+
+    .eye {
+      position: absolute;
+      top: 50%;
+      right: 13px;
+      width: 18px;
+      height: 18px;
+      transform: translateY(-50%);
+      color: #8b9bae;
+    }
+
+    .meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 5px 0 30px;
+      font-size: 13px;
+      color: #6e7e91;
+    }
+
+    .remember {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .remember input {
+      width: 14px;
+      height: 14px;
+      padding: 0;
+      margin: 0;
+      accent-color: var(--blue);
+    }
+
+    .forgot {
+      color: #5d6d80;
+      text-decoration: none;
+    }
+
+    .login-btn {
+      width: 100%;
+      height: 40px;
+      border: 0;
+      border-radius: 5px;
+      color: #fff;
+      background: #1688f7;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(22, 136, 247, 0.18);
+    }
+
+    .art {
+      position: relative;
+      min-height: 520px;
+      align-self: center;
+    }
+
+    .sheet {
+      position: absolute;
+      right: 4vw;
+      top: 17%;
+      width: min(43vw, 670px);
+      aspect-ratio: 1.26;
+      border-radius: 18px 18px 48px 18px;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(238, 249, 255, 0.92));
+      box-shadow: 0 30px 90px rgba(13, 105, 210, 0.22);
+      transform: perspective(920px) rotateX(54deg) rotateZ(-18deg);
+    }
+
+    .sheet::before {
+      position: absolute;
+      content: "";
+      inset: -54px 46px auto auto;
+      width: 55%;
+      height: 58%;
+      border-radius: 52% 52% 10% 10%;
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      background: linear-gradient(180deg, rgba(209, 246, 255, 0.74), rgba(255, 255, 255, 0.4));
+      transform: translateZ(-1px);
+    }
+
+    .symbol {
+      position: absolute;
+      left: 18%;
+      top: 16%;
+      width: 58%;
+      height: 34%;
+      filter: drop-shadow(0 18px 16px rgba(10, 99, 214, 0.28));
+    }
+
+    .symbol::before,
+    .symbol::after {
+      position: absolute;
+      content: "";
+      border: 18px solid #0c80ff;
+      border-left-color: transparent;
+      border-radius: 52%;
+      transform: rotate(-22deg);
+    }
+
+    .symbol::before {
+      left: 0;
+      top: 4%;
+      width: 45%;
+      height: 52%;
+    }
+
+    .symbol::after {
+      right: 2%;
+      bottom: 0;
+      width: 58%;
+      height: 55%;
+      border-color: #1f99ff;
+      border-left-color: transparent;
+    }
+
+    .art-title {
+      position: absolute;
+      left: 34%;
+      bottom: 22%;
+      color: #126fdd;
+      font-size: clamp(38px, 5vw, 70px);
+      font-weight: 800;
+      letter-spacing: 10px;
+      transform: rotate(13deg);
+    }
+
+    .orb {
+      position: absolute;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 25%, #fff 0 10%, #81d8ff 30%, #2f87ff 72%);
+      box-shadow: 0 16px 28px rgba(14, 115, 224, 0.22);
+      opacity: 0.85;
+    }
+
+    .orb.one {
+      left: 3vw;
+      top: 28%;
+      width: 42px;
+      height: 42px;
+    }
+
+    .orb.two {
+      right: 0;
+      bottom: 23%;
+      background: radial-gradient(circle at 30% 25%, #fff 0 10%, #91ffe3 30%, #28cfb8 72%);
+    }
+
+    .cone {
+      position: absolute;
+      left: 48%;
+      bottom: 10%;
+      width: 0;
+      height: 0;
+      border-left: 28px solid transparent;
+      border-right: 28px solid transparent;
+      border-bottom: 86px solid rgba(24, 126, 255, 0.78);
+      filter: drop-shadow(0 14px 10px rgba(16, 95, 209, 0.18));
+      transform: rotate(-8deg);
+    }
+
+    .ghost {
+      position: absolute;
+      border: 1px solid rgba(92, 173, 236, 0.11);
+      background: rgba(255, 255, 255, 0.12);
+      transform: skewY(-35deg);
+    }
+
+    .ghost.a {
+      left: 13%;
+      top: -3%;
+      width: 120px;
+      height: 120px;
+    }
+
+    .ghost.b {
+      left: 31%;
+      top: 5%;
+      width: 150px;
+      height: 150px;
+    }
+
+    @media (max-width: 980px) {
+      body {
+        overflow: auto;
+      }
+
+      .page {
+        grid-template-columns: 1fr;
+        padding: 56px 24px;
+      }
+
+      .left {
+        width: min(100%, 480px);
+        margin: 0 auto;
+      }
+
+      .art {
+        display: none;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .brand {
+        font-size: 24px;
+      }
+
+      .form {
+        padding: 20px 22px 28px;
+      }
+
+      .card-title {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <span class="ghost a"></span>
+    <span class="ghost b"></span>
+
+    <section class="left" aria-label="登录区域">
+      <div class="brand">
+        <span class="mark" aria-hidden="true"></span>
+        <span>贝尔赛事后台</span>
+      </div>
+
+      <section class="card">
+        <h1 class="card-title">账号密码登录</h1>
+        <form class="form">
+          <div class="course-select" aria-label="课程登录选择">
+            <button class="course-option active" type="button" data-target="课程设计">课程设计</button>
+            <button class="course-option" type="button" data-target="竞赛后台">竞赛后台</button>
+          </div>
+
+          <label class="field">
+            <span class="label"><span class="required">*</span>账号</span>
+            <input type="text" placeholder="请输入您的账号" autofocus />
+          </label>
+
+          <label class="field">
+            <span class="label"><span class="required">*</span>密码</span>
+            <span class="input-wrap">
+              <input type="password" placeholder="请输入密码" />
+              <svg class="eye" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M2.5 12s3.2-5.5 9.5-5.5 9.5 5.5 9.5 5.5-3.2 5.5-9.5 5.5S2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8"/>
+                <circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.8"/>
+              </svg>
+            </span>
+          </label>
+
+          <div class="meta">
+            <label class="remember">
+              <input type="checkbox" />
+              <span>记住账号</span>
+            </label>
+            <a class="forgot" href="#">忘记密码?</a>
+          </div>
+
+          <button class="login-btn" type="button">登录</button>
+        </form>
+      </section>
+    </section>
+
+    <section class="art" aria-hidden="true">
+      <span class="orb one"></span>
+      <span class="orb two"></span>
+      <span class="cone"></span>
+      <div class="sheet">
+        <span class="symbol"></span>
+        <span class="art-title">贝尔</span>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const options = document.querySelectorAll(".course-option");
+    const brand = document.querySelector(".brand span:last-child");
+
+    options.forEach((option) => {
+      option.addEventListener("click", () => {
+        options.forEach((item) => item.classList.remove("active"));
+        option.classList.add("active");
+        brand.textContent = option.dataset.target === "课程设计" ? "贝尔课程设计" : "贝尔赛事后台";
+      });
+    });
+  </script>
+</body>
+</html>

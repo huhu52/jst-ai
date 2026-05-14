@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="机设通 AI，高校机械实验设备扫码操作与智能问答助手。" />
+  <title>机设通 AI - 高校机械实验设备扫码操作与智能问答助手</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            tech: {
+              blue: '#38bdf8',
+              cyan: '#22d3ee',
+              orange: '#f59e0b',
+              red: '#ef4444',
+              panel: '#0f172a'
+            }
+          },
+          boxShadow: {
+            glow: '0 0 36px rgba(56, 189, 248, 0.18)'
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="min-h-screen overflow-x-hidden bg-slate-950 text-slate-100 antialiased">
+  <main class="relative overflow-hidden">
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-cyan-500/10 blur-3xl"></div>
+      <div class="absolute right-0 top-48 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl"></div>
+      <div class="absolute inset-0 bg-[linear-gradient(rgba(56,189,248,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.06)_1px,transparent_1px)] bg-[size:28px_28px]"></div>
+    </div>
+
+    <section class="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 sm:px-8 sm:py-8 lg:px-10">
+      <header class="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
+        <a href="index.html" class="flex items-center gap-3" aria-label="机设通 AI 首页">
+          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-cyan-300/25 bg-cyan-300/10 text-lg font-black text-cyan-200 shadow-glow sm:h-11 sm:w-11">机</span>
+          <span class="min-w-0">
+            <span class="block text-base font-semibold tracking-wide text-white">机设通 AI</span>
+            <span class="block text-xs text-slate-400">扫码操作与安全问答</span>
+          </span>
+        </a>
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-medium text-amber-200">实验安全优先</span>
+        </div>
+      </header>
+
+      <div class="grid flex-1 items-start gap-8 py-12 sm:gap-10 sm:py-16 lg:grid-cols-[1fr_1fr] lg:items-center">
+        <section class="min-w-0">
+          <p class="mb-4 inline-flex max-w-full rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-sm leading-6 text-cyan-100">高校机械实验设备扫码操作与智能问答助手</p>
+          <h1 class="max-w-3xl break-words text-[2.4rem] font-black leading-tight text-white sm:text-5xl lg:text-6xl">机设通 AI</h1>
+          <p class="mt-5 max-w-2xl text-xl font-semibold leading-8 text-cyan-100 sm:text-2xl">高校机械实验设备扫码操作与智能问答助手</p>
+          <p class="mt-5 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">学生扫码或选择设备后，可快速查看设备操作指南、安全须知，并完成基础问题咨询。</p>
+          <div class="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <button id="scanQrBtn" type="button" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-cyan-300 px-5 py-3 text-sm font-black text-slate-950 transition hover:-translate-y-0.5 hover:bg-cyan-200 sm:w-auto">扫描设备二维码</button>
+            <a href="#deviceExamples" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-cyan-300 px-5 py-3 text-sm font-black text-slate-950 transition hover:-translate-y-0.5 hover:bg-cyan-200 sm:w-auto">选择设备</a>
+            <a href="#safetyNotice" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-amber-300/35 bg-amber-300/10 px-5 py-3 text-sm font-black text-amber-100 transition hover:-translate-y-0.5 hover:bg-amber-300/15 sm:w-auto">查看安全说明</a>
+          </div>
+          <p id="scanQrTip" class="mt-3 hidden max-w-2xl rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-3 text-xs leading-5 text-cyan-50/90">请使用微信、浏览器或手机系统自带的扫码功能扫描设备旁二维码。当前演示环境如无法直接调用摄像头，可在右侧或下方选择设备示例进入。</p>
+        </section>
+
+        <section id="deviceExamples" class="min-w-0 rounded-3xl border border-cyan-300/20 bg-slate-900/75 p-4 shadow-glow backdrop-blur sm:p-5">
+          <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <div class="min-w-0">
+              <h2 class="text-xl font-bold text-white">选择实验设备</h2>
+              <p class="mt-1 text-sm leading-6 text-slate-400">请选择当前要查看的实验设备。实际使用时，也可以通过设备旁二维码直接进入对应设备页面。</p>
+            </div>
+          </div>
+          <div id="deviceList" class="grid gap-4" aria-live="polite"></div>
+        </section>
+      </div>
+
+      <footer id="safetyNotice" class="relative break-words rounded-3xl border border-amber-300/25 bg-gradient-to-br from-amber-300/15 to-slate-900/80 p-5 text-sm leading-7 text-amber-100 shadow-[0_0_28px_rgba(245,158,11,0.08)]">
+        <strong class="text-amber-200">安全免责声明：</strong>
+        本工具仅作为实验教学辅助说明，不能替代教师、实验员现场指导。涉及设备启动、控制参数修改、维修、异常处理等操作时，请以实验室制度和教师要求为准。
+      </footer>
+    </section>
+  </main>
+
+  <script>
+    const fallbackDevices = [
+      {
+        id: 'robot-dog',
+        name: '机器狗',
+        category: '智能硬件 / 机器人设备',
+        riskLevel: '中',
+        description: '用于机器人运动控制、智能交互和机械结构教学。'
+      },
+      {
+        id: 'robot-arm',
+        name: '机械臂',
+        category: '机械控制设备',
+        riskLevel: '高',
+        description: '用于机械控制、轨迹规划、夹取搬运和自动化实验教学。'
+      },
+      {
+        id: 'experiment-platform',
+        name: '实验教学平台',
+        category: '高校实验设备',
+        riskLevel: '中',
+        description: '用于课程实验、项目展示、传感器采集和机械系统综合教学。'
+      }
+    ];
+
+    async function loadDevices() {
+      try {
+        const response = await fetch('data/devices.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error('devices.json load failed');
+        return applyDeviceOverrides(await response.json());
+      } catch (error) {
+        return applyDeviceOverrides(fallbackDevices);
+      }
+    }
+
+    function applyDeviceOverrides(devices) {
+      return devices.map((device) => {
+        try {
+          const raw = localStorage.getItem(`device_override_${device.id}`);
+          return raw ? { ...device, ...JSON.parse(raw), id: device.id } : device;
+        } catch (error) {
+          return device;
+        }
+      });
+    }
+
+    function setupScanTip() {
+      const button = document.querySelector('#scanQrBtn');
+      const tip = document.querySelector('#scanQrTip');
+      button.addEventListener('click', () => {
+        tip.classList.toggle('hidden');
+      });
+    }
+
+    function renderDevices(devices) {
+      const list = document.querySelector('#deviceList');
+      list.innerHTML = devices.map((device) => `
+        <a href="device.html?id=${encodeURIComponent(device.id)}" class="group block min-h-32 rounded-2xl border border-slate-700 bg-slate-950/70 p-4 transition hover:-translate-y-1 hover:border-cyan-300/60 hover:bg-slate-900 hover:shadow-glow">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h3 class="break-words text-lg font-bold text-white group-hover:text-cyan-100">${device.name}</h3>
+              <p class="mt-1 break-words text-sm text-slate-400">${device.category}</p>
+            </div>
+            <span class="shrink-0 rounded-full border px-2.5 py-1 text-xs font-bold ${device.riskLevel === '高' ? 'border-red-300/40 bg-red-400/15 text-red-100' : 'border-amber-300/35 bg-amber-300/12 text-amber-100'}">风险 ${device.riskLevel}</span>
+          </div>
+          <p class="mt-3 break-words text-sm leading-6 text-slate-300">${device.description}</p>
+          <span class="mt-4 inline-flex min-h-10 items-center rounded-xl bg-cyan-300/10 px-3 py-2 text-sm font-bold text-cyan-100 transition group-hover:bg-cyan-300 group-hover:text-slate-950">进入设备页 <span class="ml-1 transition group-hover:translate-x-1">→</span></span>
+        </a>
+      `).join('');
+
+    }
+
+    setupScanTip();
+    loadDevices().then(renderDevices);
+  </script>
+</body>
+</html>

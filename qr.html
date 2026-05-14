@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="机设通 AI 二维码部署页，供教师、实验员或项目维护人员复制设备链接并生成二维码。" />
+  <title>二维码部署页 - 机设通 AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            tech: {
+              blue: '#38bdf8',
+              cyan: '#22d3ee',
+              orange: '#f59e0b',
+              red: '#ef4444'
+            }
+          },
+          boxShadow: {
+            glow: '0 0 36px rgba(56, 189, 248, 0.18)'
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="min-h-screen overflow-x-hidden bg-slate-950 text-slate-100 antialiased">
+  <main class="relative min-h-screen overflow-hidden">
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-cyan-500/10 blur-3xl"></div>
+      <div class="absolute right-0 top-48 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl"></div>
+      <div class="absolute inset-0 bg-[linear-gradient(rgba(56,189,248,0.055)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.055)_1px,transparent_1px)] bg-[size:28px_28px]"></div>
+    </div>
+
+    <section class="relative mx-auto w-full max-w-6xl px-4 py-6 sm:px-8 lg:px-10">
+      <header class="flex flex-wrap items-center justify-between gap-3">
+        <div class="inline-flex min-h-10 items-center gap-3 text-sm font-semibold text-cyan-100">
+          <span class="grid h-10 w-10 place-items-center rounded-xl border border-cyan-300/25 bg-cyan-300/10 text-base font-black text-cyan-200">师</span>
+          <span>教师/实验员专用入口</span>
+        </div>
+        <span class="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">二维码部署页</span>
+      </header>
+
+      <section class="mt-10 rounded-3xl border border-slate-700 bg-slate-900/75 p-4 sm:p-6">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="text-sm font-semibold text-cyan-200">设备链接列表</p>
+            <h2 class="mt-2 break-words text-2xl font-black text-white">二维码部署</h2>
+          </div>
+          <span class="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 text-xs font-bold text-emerald-100">可直接用于二维码工具</span>
+        </div>
+        <div id="deviceQrList" class="mt-5 grid gap-4" aria-live="polite"></div>
+      </section>
+
+      <footer class="mt-8 break-words rounded-3xl border border-amber-300/25 bg-amber-300/10 p-4 text-sm leading-6 text-amber-100 sm:p-5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p class="text-sm font-semibold text-amber-100">教师使用说明</p>
+            <h2 class="mt-2 text-xl font-black text-white">复制链接、生成二维码、维护内容</h2>
+          </div>
+          <span class="rounded-full border border-amber-300/30 bg-slate-950/40 px-3 py-1 text-xs font-semibold text-amber-100">内部使用</span>
+        </div>
+        <div class="mt-4 grid gap-3 text-xs leading-6 text-amber-50/85 sm:grid-cols-2 lg:grid-cols-4">
+          <p><strong class="text-amber-100">二维码：</strong>复制上方设备链接，使用草料二维码、浏览器插件或任意二维码工具生成二维码，打印前请先扫码测试。</p>
+          <p><strong class="text-amber-100">内容维护：</strong>设备资料维护在 data/devices.json，FAQ 维护在 data/faq.json，新增设备时保证 id 唯一。</p>
+          <p><strong class="text-amber-100">AI 整理：</strong>可先用 AI 从说明书整理设备介绍、操作步骤、安全须知和 FAQ，再由教师或实验员审核。</p>
+          <p><strong class="text-amber-100">学生访问：</strong>部署完成后，学生扫码打开设备页，查看说明、安全须知，并完成基础问答。</p>
+        </div>
+      </footer>
+    </section>
+  </main>
+
+  <script>
+    const fallbackDevices = [
+      {
+        id: 'robot-dog',
+        name: '机器狗',
+        category: '智能硬件 / 机器人设备',
+        riskLevel: '中'
+      },
+      {
+        id: 'robot-arm',
+        name: '机械臂',
+        category: '机械控制设备',
+        riskLevel: '高'
+      },
+      {
+        id: 'experiment-platform',
+        name: '实验教学平台',
+        category: '高校实验设备',
+        riskLevel: '中'
+      }
+    ];
+
+    async function loadDevices() {
+      try {
+        const response = await fetch('data/devices.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error('devices.json load failed');
+        return applyDeviceOverrides(await response.json());
+      } catch (error) {
+        return applyDeviceOverrides(fallbackDevices);
+      }
+    }
+
+    function applyDeviceOverrides(devices) {
+      return devices.map((device) => {
+        try {
+          const raw = localStorage.getItem(`device_override_${device.id}`);
+          return raw ? { ...device, ...JSON.parse(raw), id: device.id } : device;
+        } catch (error) {
+          return device;
+        }
+      });
+    }
+
+    function devicePath(deviceId) {
+      return `device.html?id=${encodeURIComponent(deviceId)}`;
+    }
+
+    function fullDeviceUrl(deviceId) {
+      return new URL(devicePath(deviceId), window.location.href).href;
+    }
+
+    function teacherDevicePath(deviceId) {
+      return `teacher-device.html?id=${encodeURIComponent(deviceId)}`;
+    }
+
+    async function copyText(text, button) {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const textarea = document.createElement('textarea');
+          textarea.value = text;
+          textarea.setAttribute('readonly', '');
+          textarea.style.position = 'fixed';
+          textarea.style.opacity = '0';
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+        }
+        const oldText = button.textContent;
+        button.textContent = '已复制';
+        button.classList.remove('bg-cyan-300', 'hover:bg-cyan-200');
+        button.classList.add('bg-emerald-300', 'hover:bg-emerald-200');
+        setTimeout(() => {
+          button.textContent = oldText;
+          button.classList.add('bg-cyan-300', 'hover:bg-cyan-200');
+          button.classList.remove('bg-emerald-300', 'hover:bg-emerald-200');
+        }, 1400);
+      } catch (error) {
+        button.textContent = '复制失败，请手动复制';
+      }
+    }
+
+    function renderDevices(devices) {
+      const list = document.querySelector('#deviceQrList');
+      list.innerHTML = devices.map((device) => {
+        const relativePath = devicePath(device.id);
+        const fullUrl = fullDeviceUrl(device.id);
+        return `
+          <article class="min-w-0 rounded-2xl border border-slate-700 bg-slate-950/70 p-4">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div class="min-w-0">
+                <h3 class="break-words text-lg font-bold text-white">${device.name}</h3>
+                <p class="mt-1 break-words text-sm text-slate-400">${device.category}</p>
+              </div>
+              <span class="shrink-0 rounded-full border border-amber-300/30 bg-amber-300/10 px-2.5 py-1 text-xs font-semibold text-amber-100">风险 ${device.riskLevel}</span>
+            </div>
+            <div class="mt-4 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-3">
+              <p class="text-xs text-cyan-100/70">设备访问链接</p>
+              <p class="mt-2 break-all font-mono text-sm leading-6 text-cyan-50">${relativePath}</p>
+            </div>
+            <div class="mt-4 flex flex-col gap-3 sm:flex-row">
+              <a href="${teacherDevicePath(device.id)}" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-bold text-cyan-100 transition hover:border-cyan-300/60 sm:w-auto">打开设备页</a>
+              <button type="button" class="copy-link inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-cyan-300 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-200 sm:w-auto" data-url="${fullUrl}">复制链接</button>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      document.querySelectorAll('.copy-link').forEach((button) => {
+        button.addEventListener('click', () => copyText(button.dataset.url, button));
+      });
+    }
+
+    loadDevices().then(renderDevices);
+  </script>
+</body>
+</html>

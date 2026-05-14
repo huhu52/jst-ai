@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="机设通 AI 设备详情页。" />
+  <title>设备详情 - 机设通 AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            tech: {
+              blue: '#38bdf8',
+              cyan: '#22d3ee',
+              orange: '#f59e0b',
+              red: '#ef4444'
+            }
+          },
+          boxShadow: {
+            glow: '0 0 36px rgba(56, 189, 248, 0.18)'
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="min-h-screen overflow-x-hidden bg-slate-950 text-slate-100 antialiased">
+  <main class="relative min-h-screen overflow-hidden">
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="absolute left-0 top-0 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl"></div>
+      <div class="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-blue-500/10 blur-3xl"></div>
+      <div class="absolute inset-0 bg-[linear-gradient(rgba(56,189,248,0.055)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.055)_1px,transparent_1px)] bg-[size:28px_28px]"></div>
+    </div>
+
+    <div class="relative mx-auto w-full max-w-5xl px-4 py-6 sm:px-8 lg:px-10">
+      <header class="mb-8 flex flex-wrap items-center justify-between gap-3 sm:gap-4">
+        <a href="index.html" class="inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-cyan-100 hover:text-white">
+          <span>←</span>
+          返回首页
+        </a>
+        <span class="max-w-full rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-medium leading-5 text-amber-200">现场操作请听从教师指导</span>
+      </header>
+
+      <section id="deviceRoot" aria-live="polite"></section>
+
+      <footer class="mt-8 break-words rounded-2xl border border-amber-300/25 bg-amber-300/10 p-4 text-sm leading-6 text-amber-100">
+        <strong class="text-amber-200">安全免责声明：</strong>
+        本工具仅作为实验教学辅助说明，不能替代教师、实验员现场指导。涉及设备启动、控制参数修改、维修、异常处理等操作时，请以实验室制度和教师要求为准。
+      </footer>
+    </div>
+  </main>
+
+  <script>
+    const fallbackDevices = [
+      {
+        id: 'robot-dog',
+        name: '机器狗',
+        category: '智能硬件 / 机器人设备',
+        riskLevel: '中',
+        description: '机器狗是一类四足机器人设备，可用于高校机械、自动化、机器人相关课程中的运动控制、路径规划、传感器识别和智能交互教学。',
+        scenarios: ['机器人运动控制实验', '智能硬件展示', '机械结构与控制系统教学', '人机交互实验'],
+        checks: ['检查设备电量是否充足', '检查设备外壳和关节结构是否完好', '确认周围地面平整、无障碍物', '检查遥控器或控制终端连接状态'],
+        steps: ['将机器狗放置在平整地面', '打开设备电源', '等待设备完成初始化', '连接遥控器或控制终端', '选择基础运动模式'],
+        warnings: ['设备运行时不要站在机器狗正前方或关节运动区域内', '不要强行拖拽机器狗腿部结构', '出现异常抖动、失控或摔倒时，应立即停止运行'],
+        aiUrl: ''
+      },
+      {
+        id: 'robot-arm',
+        name: '机械臂',
+        category: '机械控制设备',
+        riskLevel: '高',
+        description: '机械臂用于机械控制、轨迹规划、夹取搬运、自动化生产线模拟和机器人控制教学。',
+        scenarios: ['机械控制实验', '轨迹规划教学', '自动化搬运演示'],
+        checks: ['确认急停按钮可用', '检查夹具安装是否牢固', '确认运动范围内没有人员和杂物'],
+        steps: ['打开控制终端', '确认机械臂处于初始安全位置', '加载基础演示程序', '低速运行测试动作'],
+        warnings: ['机械臂运动范围内禁止站人', '不得绕过急停保护', '异常振动或碰撞时立即停止'],
+        aiUrl: ''
+      },
+      {
+        id: 'experiment-platform',
+        name: '实验教学平台',
+        category: '高校实验设备',
+        riskLevel: '中',
+        description: '实验教学平台用于课程实验、项目展示、传感器采集、机械系统综合实验和教学演示。',
+        scenarios: ['课程实验教学', '传感器数据采集', '机械系统综合展示'],
+        checks: ['检查电源和线缆连接', '确认模块安装牢固', '确认实验参数由教师审核'],
+        steps: ['连接平台电源', '打开控制软件或面板', '选择实验模式', '按照实验指导书完成操作'],
+        warnings: ['不得私自改接线路', '不得带电拆装模块', '异常发热或异味时立即断电并报告'],
+        aiUrl: ''
+      }
+    ];
+
+    const fallbackMessage = '暂未找到相关答案，请联系教师或实验员确认。涉及设备启动、控制参数修改、维修和异常处理时，请勿自行操作。';
+    const fallbackFaq = [
+      {
+        deviceId: 'robot-dog',
+        question: '启动前需要检查什么？',
+        keywords: ['启动前', '检查', '准备', '电量', '环境'],
+        answer: '请检查设备电量、外壳结构、关节状态、控制终端连接情况，并确认周围环境安全。'
+      },
+      {
+        deviceId: 'robot-dog',
+        question: '机器狗无法启动怎么办？',
+        keywords: ['无法启动', '启动不了', '没反应', '开机'],
+        answer: '请先检查电量、电源开关和控制终端连接状态。如仍无法启动，请联系教师或实验员处理。'
+      },
+      {
+        deviceId: 'robot-arm',
+        question: '机械臂发生碰撞怎么办？',
+        keywords: ['碰撞', '撞到', '异常', '急停'],
+        answer: '请立即按下急停按钮，停止设备运行，并联系教师或实验员检查机械臂状态。'
+      },
+      {
+        deviceId: 'experiment-platform',
+        question: '实验平台出现异味怎么办？',
+        keywords: ['异味', '发热', '冒烟', '异常'],
+        answer: '请立即断电并停止实验，不要继续操作，及时联系教师或实验员处理。'
+      }
+    ];
+
+    let currentFaq = [];
+
+    function getDeviceId() {
+      return new URLSearchParams(window.location.search).get('id') || '';
+    }
+
+    async function loadDevices() {
+      try {
+        const response = await fetch('data/devices.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error('devices.json load failed');
+        return applyDeviceOverrides(await response.json());
+      } catch (error) {
+        return applyDeviceOverrides(fallbackDevices);
+      }
+    }
+
+    function applyDeviceOverrides(devices) {
+      return devices.map((device) => {
+        try {
+          const raw = localStorage.getItem(`device_override_${device.id}`);
+          return raw ? { ...device, ...JSON.parse(raw), id: device.id } : device;
+        } catch (error) {
+          return device;
+        }
+      });
+    }
+
+    async function loadFaq() {
+      try {
+        const response = await fetch('data/faq.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error('faq.json load failed');
+        return await response.json();
+      } catch (error) {
+        return fallbackFaq;
+      }
+    }
+
+    function admissionKey(deviceId) {
+      return `access_${deviceId}`;
+    }
+
+    function getAdmission(deviceId) {
+      try {
+        const raw = localStorage.getItem(admissionKey(deviceId));
+        return raw ? JSON.parse(raw) : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function saveAdmission(deviceId) {
+      const admission = {
+        completed: true,
+        admittedAt: new Date().toISOString(),
+        storageSaved: true
+      };
+      try {
+        localStorage.setItem(admissionKey(deviceId), JSON.stringify(admission));
+      } catch (error) {
+        admission.storageSaved = false;
+      }
+      return admission;
+    }
+
+    function formatTime(isoString) {
+      const date = new Date(isoString);
+      if (Number.isNaN(date.getTime())) return '已记录';
+      return date.toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function listItems(items, ordered = false) {
+      const tag = ordered ? 'ol' : 'ul';
+      const listClass = ordered ? 'list-decimal' : 'list-disc';
+      return `<${tag} class="${listClass} space-y-2 pl-5 text-sm leading-6 text-slate-300">${items.map(item => `<li>${item}</li>`).join('')}</${tag}>`;
+    }
+
+    function infoCard(title, content, variant = 'default') {
+      const colors = variant === 'warning'
+        ? 'border-red-400/25 bg-red-500/10'
+        : 'border-slate-700 bg-slate-900/80';
+      return `
+        <section class="min-w-0 rounded-2xl border ${colors} p-4 sm:p-5">
+          <h2 class="mb-3 text-lg font-bold text-white">${title}</h2>
+          ${content}
+        </section>
+      `;
+    }
+
+    function renderAdmissionCard(device, admission) {
+      return `
+        <section class="relative overflow-hidden rounded-3xl border border-cyan-300/40 bg-slate-900/95 p-5 shadow-[0_0_42px_rgba(34,211,238,0.2)] sm:p-6">
+          <div class="absolute -right-8 -top-8 h-28 w-28 rounded-full border border-cyan-300/20 bg-cyan-300/10"></div>
+          <div class="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-cyan-300/60 to-transparent"></div>
+          <div class="relative">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-cyan-200">实验设备安全通行证</p>
+                <h2 class="mt-2 break-words text-2xl font-black text-white">${device.name} 安全准入卡</h2>
+              </div>
+              <span class="rounded-full border border-emerald-300/40 bg-emerald-300/15 px-3 py-1 text-xs font-black text-emerald-100 shadow-[0_0_18px_rgba(110,231,183,0.18)]">已准入</span>
+            </div>
+            <div class="mt-5 grid gap-3 sm:grid-cols-2">
+              <div class="rounded-2xl border border-slate-700 bg-slate-950/60 p-4">
+                <p class="text-xs text-slate-500">设备名称</p>
+                <p class="mt-1 break-words text-base font-bold text-white">${device.name}</p>
+              </div>
+              <div class="rounded-2xl border border-slate-700 bg-slate-950/60 p-4">
+                <p class="text-xs text-slate-500">设备类型</p>
+                <p class="mt-1 break-words text-base font-bold text-white">${device.category}</p>
+              </div>
+              <div class="rounded-2xl border border-amber-300/25 bg-amber-300/10 p-4">
+                <p class="text-xs text-amber-100/80">风险等级</p>
+                <p class="mt-1 text-base font-bold text-amber-100">${device.riskLevel}</p>
+              </div>
+              <div class="rounded-2xl border border-emerald-300/25 bg-emerald-300/10 p-4">
+                <p class="text-xs text-emerald-100/80">安全确认状态</p>
+                <p class="mt-1 text-base font-bold text-emerald-100">已完成</p>
+              </div>
+            </div>
+            <div class="mt-4 grid gap-3 sm:grid-cols-2">
+              <div class="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4">
+                <p class="text-xs text-cyan-100/80">准入时间</p>
+                <p class="mt-1 break-words font-mono text-sm font-semibold text-cyan-50">${formatTime(admission.admittedAt)}</p>
+              </div>
+              <div class="rounded-2xl border border-emerald-300/25 bg-emerald-300/10 p-4">
+                <p class="text-xs text-emerald-100/80">状态</p>
+                <p class="mt-1 text-base font-bold text-emerald-100">允许进入基础问答</p>
+              </div>
+            </div>
+            <p class="mt-4 rounded-2xl border border-slate-700 bg-slate-950/60 p-4 text-xs leading-5 text-slate-400">数据说明：${admission.storageSaved === false ? '当前浏览器未能写入本地缓存，但本次安全准入已完成。' : '仅保存在本机浏览器 localStorage，不上传个人信息。'}</p>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderSafetyPanel() {
+      const items = [
+        '我已阅读本设备安全须知',
+        '我已佩戴必要防护装备',
+        '我确认将在教师或实验员指导下操作设备',
+        '我已确认周围环境适合设备运行',
+        '遇到异常情况，我会立即停止操作并联系教师或实验员'
+      ];
+
+      return `
+        <section class="rounded-3xl border border-amber-300/25 bg-amber-300/10 p-5 sm:p-6">
+          <p class="text-sm font-semibold text-amber-200">安全确认流程</p>
+          <h2 class="mt-2 break-words text-2xl font-black text-white">完成确认后生成设备安全准入卡</h2>
+          <p class="mt-3 text-sm leading-7 text-amber-50/90">请逐项确认。系统不会采集姓名、手机号、学号等个人信息。</p>
+          <div class="mt-5 grid gap-3">
+            ${items.map((item, index) => `
+              <label class="flex min-h-12 items-start gap-3 rounded-2xl border border-amber-300/20 bg-slate-950/50 p-4 text-sm leading-6 text-slate-100">
+                <input type="checkbox" class="safety-check mt-1 h-5 w-5 shrink-0 accent-cyan-300" data-index="${index}" />
+                <span>${item}</span>
+              </label>
+            `).join('')}
+          </div>
+          <p id="safetyTip" class="mt-4 text-sm font-semibold text-amber-200">请完成全部安全确认</p>
+          <button id="confirmAdmissionBtn" type="button" disabled class="mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-slate-700 px-5 py-3 text-sm font-bold text-slate-400 transition disabled:cursor-not-allowed sm:w-auto">生成安全准入卡</button>
+        </section>
+      `;
+    }
+
+    function renderQaPanel(device) {
+      const faqs = currentFaq.filter(item => item.deviceId === device.id);
+      return `
+        <section class="rounded-3xl border border-slate-700 bg-slate-900/80 p-5 sm:p-6">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-cyan-200">基础问答</p>
+              <h2 class="mt-2 break-words text-2xl font-black text-white">设备 FAQ 安全助手</h2>
+            </div>
+            <span class="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 text-xs font-bold text-emerald-100">已通过安全准入</span>
+          </div>
+          <div class="mt-5 grid gap-2 sm:grid-cols-2">
+            ${faqs.slice(0, 4).map(item => `
+              <button type="button" class="faq-suggestion min-h-11 rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2 text-left text-sm leading-6 text-cyan-100 transition hover:border-cyan-300/60" data-question="${item.question}">${item.question}</button>
+            `).join('')}
+          </div>
+          <div class="mt-5 flex flex-col gap-3 sm:flex-row">
+            <input id="questionInput" type="text" class="min-h-12 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300" placeholder="例如：启动前需要检查什么？" />
+            <button id="askBtn" type="button" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-cyan-300 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-200 sm:w-auto">发送</button>
+          </div>
+          <div id="chatBox" class="mt-5 grid gap-3 rounded-2xl border border-slate-700 bg-slate-950/70 p-4 text-sm leading-7 text-slate-300">
+            <div class="max-w-[92%] rounded-2xl rounded-bl-sm border border-cyan-300/20 bg-cyan-300/10 p-3 text-cyan-50">
+              完成安全准入后，可输入设备相关基础问题。涉及启动、控制参数、维修和异常处理时，请以教师或实验员要求为准。
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderDevice(device) {
+      const root = document.querySelector('#deviceRoot');
+      const aiButton = device.aiUrl
+        ? `<a href="${device.aiUrl}" target="_blank" rel="noopener" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-cyan-300 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-200 sm:w-auto">打开 AI 设备助手</a>`
+        : `<button type="button" disabled class="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-slate-700 bg-slate-800 px-5 py-3 text-sm font-bold text-slate-400 sm:w-auto">AI 设备助手待配置</button>`;
+
+      root.innerHTML = `
+        <section class="min-w-0 rounded-3xl border border-cyan-300/20 bg-slate-900/80 p-4 shadow-glow sm:p-7">
+          <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+            <div class="min-w-0">
+              <p class="mb-3 inline-flex max-w-full break-words rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-sm leading-6 text-cyan-100">${device.category}</p>
+              <h1 class="break-words text-2xl font-black leading-tight text-white sm:text-5xl">${device.name}</h1>
+              <p class="mt-4 max-w-3xl text-base leading-8 text-slate-300">${device.description}</p>
+            </div>
+            <span class="w-fit rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-sm font-semibold text-amber-100">风险等级：${device.riskLevel}</span>
+          </div>
+          <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+            <button id="startAskBtn" type="button" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-blue-500 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-400 sm:w-auto">开始安全准入</button>
+            ${aiButton}
+          </div>
+          <p class="mt-3 text-xs leading-5 text-slate-500">提示：提问前需完成安全确认。本页面不采集姓名、手机号、学号等个人信息。</p>
+        </section>
+
+        <div class="mt-6 grid gap-4 lg:grid-cols-2">
+          ${infoCard('使用场景', listItems(device.scenarios))}
+          ${infoCard('操作前检查', listItems(device.checks))}
+          ${infoCard('基础操作步骤', listItems(device.steps, true))}
+          ${infoCard('安全注意事项', listItems(device.warnings), 'warning')}
+        </div>
+
+        <div id="admissionArea" class="mt-6 grid gap-4"></div>
+      `;
+
+      setupAdmission(device);
+    }
+
+    function setupAdmission(device) {
+      const admissionArea = document.querySelector('#admissionArea');
+      const startAskBtn = document.querySelector('#startAskBtn');
+      const admission = getAdmission(device.id);
+
+      if (admission?.completed) {
+        admissionArea.innerHTML = renderAdmissionCard(device, admission) + renderQaPanel(device);
+        startAskBtn.textContent = '已完成安全准入';
+        setupQa(device);
+        return;
+      }
+
+      startAskBtn.addEventListener('click', () => {
+        admissionArea.innerHTML = renderSafetyPanel();
+        admissionArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setupSafetyChecks(device);
+      });
+    }
+
+    function setupSafetyChecks(device) {
+      const checks = Array.from(document.querySelectorAll('.safety-check'));
+      const button = document.querySelector('#confirmAdmissionBtn');
+
+      function updateButton() {
+        const ready = checks.every(item => item.checked);
+        const tip = document.querySelector('#safetyTip');
+        button.disabled = !ready;
+        tip.textContent = ready ? '安全确认已完成，可以生成安全准入卡' : '请完成全部安全确认';
+        tip.className = ready
+          ? 'mt-4 text-sm font-semibold text-emerald-200'
+          : 'mt-4 text-sm font-semibold text-amber-200';
+        button.className = ready
+          ? 'mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-cyan-300 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-200 sm:w-auto'
+          : 'mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-slate-700 px-5 py-3 text-sm font-bold text-slate-400 transition disabled:cursor-not-allowed sm:w-auto';
+      }
+
+      checks.forEach(item => item.addEventListener('change', updateButton));
+      button.addEventListener('click', () => {
+        if (!checks.every(item => item.checked)) return;
+        const admission = saveAdmission(device.id);
+        const admissionArea = document.querySelector('#admissionArea');
+        admissionArea.innerHTML = renderAdmissionCard(device, admission) + renderQaPanel(device);
+        document.querySelector('#startAskBtn').textContent = '已完成安全准入';
+        setupQa(device);
+      });
+    }
+
+    function findAnswer(device, question) {
+      const normalized = question.trim().toLowerCase();
+      if (!normalized) return '请先输入设备相关问题。';
+
+      const faqs = currentFaq.filter(item => item.deviceId === device.id);
+      const matched = faqs.find(item => {
+        const q = `${item.question} ${item.keywords.join(' ')}`.toLowerCase();
+        return item.keywords.some(keyword => normalized.includes(keyword.toLowerCase())) || q.includes(normalized);
+      });
+
+      return matched ? matched.answer : fallbackMessage;
+    }
+
+    function setupQa(device) {
+      const input = document.querySelector('#questionInput');
+      const askBtn = document.querySelector('#askBtn');
+      const chatBox = document.querySelector('#chatBox');
+      const suggestions = Array.from(document.querySelectorAll('.faq-suggestion'));
+
+      function ask(question) {
+        input.value = question;
+        const answer = findAnswer(device, question);
+        chatBox.insertAdjacentHTML('beforeend', `
+          <div class="ml-auto max-w-[92%] rounded-2xl rounded-br-sm bg-blue-500 px-4 py-3 text-white">
+            <p class="break-words">${escapeHtml(question || '未输入')}</p>
+          </div>
+          <div class="mr-auto max-w-[92%] rounded-2xl rounded-bl-sm border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-cyan-50">
+            <p class="break-words">${escapeHtml(answer)}</p>
+          </div>
+        `);
+        chatBox.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        input.value = '';
+      }
+
+      askBtn.addEventListener('click', () => ask(input.value));
+      input.addEventListener('keydown', event => {
+        if (event.key === 'Enter') ask(input.value);
+      });
+      suggestions.forEach(button => {
+        button.addEventListener('click', () => ask(button.dataset.question));
+      });
+    }
+
+    function renderNotFound(deviceId) {
+      document.querySelector('#deviceRoot').innerHTML = `
+        <section class="rounded-3xl border border-red-400/25 bg-red-500/10 p-6">
+          <p class="text-sm font-semibold text-red-200">未找到设备</p>
+          <h1 class="mt-3 text-2xl font-black text-white">未找到设备信息</h1>
+          <p class="mt-3 break-words text-sm leading-6 text-slate-300">当前链接中的设备 ID 为：<span class="font-mono text-cyan-100">${deviceId || '空'}</span>。请检查设备链接或返回首页重新选择设备。</p>
+          <a href="index.html" class="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-cyan-300 px-4 py-2 text-sm font-bold text-slate-950 sm:w-auto">返回首页</a>
+        </section>
+      `;
+    }
+
+    async function init() {
+      const deviceId = getDeviceId();
+      const [devices, faq] = await Promise.all([loadDevices(), loadFaq()]);
+      currentFaq = faq;
+      const device = devices.find(item => item.id === deviceId);
+      if (!device) {
+        renderNotFound(deviceId);
+        return;
+      }
+      document.title = `${device.name} - 机设通 AI`;
+      renderDevice(device);
+    }
+
+    init();
+  </script>
+</body>
+</html>
