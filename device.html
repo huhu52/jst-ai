@@ -126,6 +126,17 @@
       return new URLSearchParams(window.location.search).get('id') || '';
     }
 
+    function shouldResetAdmissionForDemo() {
+      const params = new URLSearchParams(window.location.search);
+      return ['demo', 'reset', 'resetAccess'].some(key => params.get(key) === '1');
+    }
+
+    function clearDemoParamsFromUrl() {
+      const url = new URL(window.location.href);
+      ['demo', 'reset', 'resetAccess'].forEach(key => url.searchParams.delete(key));
+      window.history.replaceState({}, '', url.toString());
+    }
+
     async function loadDevices() {
       try {
         const response = await fetch('data/devices.json', { cache: 'no-store' });
@@ -184,6 +195,14 @@
       return admission;
     }
 
+    function clearAdmission(deviceId) {
+      try {
+        localStorage.removeItem(admissionKey(deviceId));
+      } catch (error) {
+        // localStorage may be unavailable in some in-app browsers.
+      }
+    }
+
     function formatTime(isoString) {
       const date = new Date(isoString);
       if (Number.isNaN(date.getTime())) return '已记录';
@@ -225,46 +244,53 @@
 
     function renderAdmissionCard(device, admission) {
       return `
-        <section class="relative overflow-hidden rounded-3xl border border-cyan-300/40 bg-slate-900/95 p-5 shadow-[0_0_42px_rgba(34,211,238,0.2)] sm:p-6">
-          <div class="absolute -right-8 -top-8 h-28 w-28 rounded-full border border-cyan-300/20 bg-cyan-300/10"></div>
-          <div class="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-cyan-300/60 to-transparent"></div>
+        <section class="relative overflow-hidden rounded-[2rem] border border-cyan-300/50 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 p-5 shadow-[0_0_52px_rgba(34,211,238,0.28)] sm:p-7">
+          <div class="absolute -right-16 -top-16 h-44 w-44 rounded-full border border-cyan-300/20 bg-cyan-300/10"></div>
+          <div class="absolute -bottom-14 left-8 h-32 w-32 rounded-full border border-emerald-300/20 bg-emerald-300/10"></div>
+          <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-300 via-emerald-300 to-amber-300"></div>
           <div class="relative">
-            <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div class="min-w-0">
-                <p class="text-sm font-semibold text-cyan-200">实验设备安全通行证</p>
-                <h2 class="mt-2 break-words text-2xl font-black text-white">${device.name} 安全准入卡</h2>
+                <p class="inline-flex rounded-full border border-cyan-300/35 bg-cyan-300/10 px-3 py-1 text-xs font-black tracking-[0.2em] text-cyan-100">SAFETY PASS</p>
+                <h2 class="mt-4 break-words text-3xl font-black leading-tight text-white sm:text-5xl">实验设备<br class="hidden sm:block" />安全通行证</h2>
+                <p class="mt-3 text-sm leading-6 text-slate-300">完成安全确认后，允许进入本设备基础问答。</p>
               </div>
-              <span class="rounded-full border border-emerald-300/40 bg-emerald-300/15 px-3 py-1 text-xs font-black text-emerald-100 shadow-[0_0_18px_rgba(110,231,183,0.18)]">已准入</span>
-            </div>
-            <div class="mt-5 grid gap-3 sm:grid-cols-2">
-              <div class="rounded-2xl border border-slate-700 bg-slate-950/60 p-4">
-                <p class="text-xs text-slate-500">设备名称</p>
-                <p class="mt-1 break-words text-base font-bold text-white">${device.name}</p>
-              </div>
-              <div class="rounded-2xl border border-slate-700 bg-slate-950/60 p-4">
-                <p class="text-xs text-slate-500">设备类型</p>
-                <p class="mt-1 break-words text-base font-bold text-white">${device.category}</p>
-              </div>
-              <div class="rounded-2xl border border-amber-300/25 bg-amber-300/10 p-4">
-                <p class="text-xs text-amber-100/80">风险等级</p>
-                <p class="mt-1 text-base font-bold text-amber-100">${device.riskLevel}</p>
-              </div>
-              <div class="rounded-2xl border border-emerald-300/25 bg-emerald-300/10 p-4">
-                <p class="text-xs text-emerald-100/80">安全确认状态</p>
-                <p class="mt-1 text-base font-bold text-emerald-100">已完成</p>
+              <div class="grid h-24 w-24 shrink-0 place-items-center rounded-full border-4 border-emerald-300 bg-emerald-300/15 text-center shadow-[0_0_28px_rgba(52,211,153,0.35)]">
+                <span class="text-lg font-black leading-6 text-emerald-100">已<br />准入</span>
               </div>
             </div>
+
+            <div class="mt-6 grid gap-4 lg:grid-cols-[1fr_0.9fr]">
+              <div class="rounded-3xl border border-white/10 bg-white/[0.06] p-5">
+                <p class="text-xs font-semibold text-slate-400">设备名称</p>
+                <p class="mt-2 break-words text-3xl font-black text-white">${device.name}</p>
+                <p class="mt-4 text-xs font-semibold text-slate-400">设备类型</p>
+                <p class="mt-1 break-words text-base font-bold leading-7 text-cyan-100">${device.category}</p>
+              </div>
+              <div class="grid gap-3">
+                <div class="rounded-3xl border border-amber-300/30 bg-amber-300/10 p-4">
+                  <p class="text-xs text-amber-100/80">风险等级</p>
+                  <p class="mt-1 text-3xl font-black text-amber-100">${device.riskLevel}</p>
+                </div>
+                <div class="rounded-3xl border border-emerald-300/30 bg-emerald-300/10 p-4">
+                  <p class="text-xs text-emerald-100/80">准入状态</p>
+                  <p class="mt-1 text-xl font-black text-emerald-100">允许进入基础问答</p>
+                </div>
+              </div>
+            </div>
+
             <div class="mt-4 grid gap-3 sm:grid-cols-2">
               <div class="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4">
                 <p class="text-xs text-cyan-100/80">准入时间</p>
                 <p class="mt-1 break-words font-mono text-sm font-semibold text-cyan-50">${formatTime(admission.admittedAt)}</p>
               </div>
-              <div class="rounded-2xl border border-emerald-300/25 bg-emerald-300/10 p-4">
-                <p class="text-xs text-emerald-100/80">状态</p>
-                <p class="mt-1 text-base font-bold text-emerald-100">允许进入基础问答</p>
+              <div class="rounded-2xl border border-slate-600 bg-slate-950/45 p-4">
+                <p class="text-xs text-slate-400">数据说明</p>
+                <p class="mt-1 text-xs leading-5 text-slate-300">${admission.storageSaved === false ? '当前浏览器未能写入本地缓存，但本次安全准入已完成。' : '仅保存在本机浏览器 localStorage，不上传个人信息。'}</p>
               </div>
             </div>
-            <p class="mt-4 rounded-2xl border border-slate-700 bg-slate-950/60 p-4 text-xs leading-5 text-slate-400">数据说明：${admission.storageSaved === false ? '当前浏览器未能写入本地缓存，但本次安全准入已完成。' : '仅保存在本机浏览器 localStorage，不上传个人信息。'}</p>
+
+            <button id="resetAdmissionBtn" type="button" class="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-cyan-300/35 bg-cyan-300/10 px-4 py-2 text-sm font-bold text-cyan-100 transition hover:border-cyan-200 sm:w-auto">重新演示安全准入</button>
           </div>
         </section>
       `;
@@ -371,6 +397,7 @@
       if (admission?.completed) {
         admissionArea.innerHTML = renderAdmissionCard(device, admission) + renderQaPanel(device);
         startAskBtn.textContent = '已完成安全准入';
+        setupResetAdmission(device);
         setupQa(device);
         return;
       }
@@ -406,7 +433,22 @@
         const admissionArea = document.querySelector('#admissionArea');
         admissionArea.innerHTML = renderAdmissionCard(device, admission) + renderQaPanel(device);
         document.querySelector('#startAskBtn').textContent = '已完成安全准入';
+        setupResetAdmission(device);
         setupQa(device);
+      });
+    }
+
+    function setupResetAdmission(device) {
+      const resetButton = document.querySelector('#resetAdmissionBtn');
+      if (!resetButton) return;
+      resetButton.addEventListener('click', () => {
+        clearAdmission(device.id);
+        const admissionArea = document.querySelector('#admissionArea');
+        const startAskBtn = document.querySelector('#startAskBtn');
+        startAskBtn.textContent = '开始安全准入';
+        admissionArea.innerHTML = renderSafetyPanel();
+        admissionArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setupSafetyChecks(device);
       });
     }
 
@@ -466,6 +508,10 @@
 
     async function init() {
       const deviceId = getDeviceId();
+      if (deviceId && shouldResetAdmissionForDemo()) {
+        clearAdmission(deviceId);
+        clearDemoParamsFromUrl();
+      }
       const [devices, faq] = await Promise.all([loadDevices(), loadFaq()]);
       currentFaq = faq;
       const device = devices.find(item => item.id === deviceId);
