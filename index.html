@@ -27,35 +27,117 @@
       }
     };
   </script>
+  <style>
+    html,
+    body {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
+    .tech-bg {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 18% 16%, rgba(34, 211, 238, 0.14), transparent 28%),
+        radial-gradient(circle at 82% 18%, rgba(59, 130, 246, 0.12), transparent 30%),
+        linear-gradient(180deg, #06111f 0%, #071827 48%, #020617 100%);
+    }
+
+    .tech-bg::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+        linear-gradient(rgba(34, 211, 238, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34, 211, 238, 0.1) 1px, transparent 1px);
+      background-size: 32px 32px, 32px 32px, 160px 160px, 160px 160px;
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.25));
+      animation: gridDrift 28s linear infinite;
+    }
+
+    .tech-bg::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(115deg, transparent 0 38%, rgba(34, 211, 238, 0.08) 46%, transparent 56% 100%),
+        radial-gradient(circle at 70% 42%, rgba(14, 165, 233, 0.14), transparent 18%);
+      animation: lightShift 16s ease-in-out infinite alternate;
+    }
+
+    .tech-grid {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, transparent 0 9%, rgba(34, 211, 238, 0.12) 9.2%, transparent 9.5% 100%),
+        linear-gradient(180deg, transparent 0 28%, rgba(34, 211, 238, 0.1) 28.2%, transparent 28.5% 100%);
+      opacity: 0.45;
+    }
+
+    .scan-line,
+    .particle {
+      display: none;
+    }
+
+    @keyframes gridDrift {
+      from { background-position: 0 0, 0 0, 0 0, 0 0; }
+      to { background-position: 32px 32px, 32px 32px, 80px 80px, 80px 80px; }
+    }
+
+    @keyframes lightShift {
+      from { opacity: 0.45; transform: translate3d(-2%, 0, 0); }
+      to { opacity: 0.9; transform: translate3d(2%, -1%, 0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .tech-bg::before,
+      .tech-bg::after {
+        animation: none;
+      }
+    }
+  </style>
 </head>
 <body class="min-h-screen overflow-x-hidden bg-slate-950 text-slate-100 antialiased">
   <main class="relative overflow-hidden">
-    <div class="absolute inset-0 pointer-events-none">
-      <div class="absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-cyan-500/10 blur-3xl"></div>
-      <div class="absolute right-0 top-48 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl"></div>
-      <div class="absolute inset-0 bg-[linear-gradient(rgba(56,189,248,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.06)_1px,transparent_1px)] bg-[size:28px_28px]"></div>
+    <div class="tech-bg">
+      <div class="tech-grid"></div>
+      <div class="scan-line"></div>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
+      <span class="particle"></span>
     </div>
 
     <section class="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 sm:px-8 sm:py-8 lg:px-10">
       <header class="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
         <a href="index.html" class="flex items-center gap-3" aria-label="机设通 AI 首页">
-          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-cyan-300/25 bg-cyan-300/10 text-lg font-black text-cyan-200 shadow-glow sm:h-11 sm:w-11">机</span>
-          <span class="min-w-0">
+          <img src="assets/jst-logo.svg" alt="机设通 AI" class="h-14 w-auto max-w-[14rem] drop-shadow-[0_0_16px_rgba(34,211,238,0.18)]" />
+          <span class="hidden min-w-0 sm:block">
             <span class="block text-base font-semibold tracking-wide text-white">机设通 AI</span>
             <span class="block text-xs text-slate-400">扫码操作与安全问答</span>
           </span>
         </a>
         <div class="flex flex-wrap items-center gap-2">
-          <span class="rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-medium text-amber-200">实验安全优先</span>
+          <span class="hidden rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-medium text-amber-200 sm:inline-flex">实验安全优先</span>
         </div>
       </header>
 
       <div class="grid flex-1 items-start gap-8 py-12 sm:gap-10 sm:py-16 lg:grid-cols-[1fr_1fr] lg:items-center">
         <section class="min-w-0">
-          <p class="mb-4 inline-flex max-w-full rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-sm leading-6 text-cyan-100">高校机械实验设备扫码操作与智能问答助手</p>
+          <p class="mb-4 inline-block max-w-full break-all rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-sm leading-6 text-cyan-100 sm:break-words">高校机械实验设备扫码操作与智能问答助手</p>
           <h1 class="max-w-3xl break-words text-[2.4rem] font-black leading-tight text-white sm:text-5xl lg:text-6xl">机设通 AI</h1>
-          <p class="mt-5 max-w-2xl text-xl font-semibold leading-8 text-cyan-100 sm:text-2xl">高校机械实验设备扫码操作与智能问答助手</p>
-          <p class="mt-5 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">学生扫码或选择设备后，可快速查看设备操作指南、安全须知，并完成基础问题咨询。</p>
+          <p class="mt-5 max-w-2xl break-words text-lg font-semibold leading-8 text-cyan-100 sm:text-2xl">
+            <span class="block sm:inline">高校机械实验设备扫码操作</span>
+            <span class="block sm:inline">与智能问答助手</span>
+          </p>
+          <p class="mt-5 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
+            <span class="block">扫码或选择设备后，查看操作指南和安全须知。</span>
+            <span class="block">完成安全确认后，可进行基础问题咨询。</span>
+          </p>
           <div class="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <button id="scanQrBtn" type="button" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-cyan-300 px-5 py-3 text-sm font-black text-slate-950 transition hover:-translate-y-0.5 hover:bg-cyan-200 sm:w-auto">扫描设备二维码</button>
             <a href="#deviceExamples" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-cyan-300 px-5 py-3 text-sm font-black text-slate-950 transition hover:-translate-y-0.5 hover:bg-cyan-200 sm:w-auto">选择设备</a>
@@ -67,7 +149,10 @@
           <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
             <div class="min-w-0">
               <h2 class="text-xl font-bold text-white">选择实验设备</h2>
-              <p class="mt-1 text-sm leading-6 text-slate-400">请选择当前要查看的实验设备。实际使用时，也可以通过设备旁二维码直接进入对应设备页面。</p>
+              <p class="mt-1 text-sm leading-6 text-slate-400">
+                <span class="block">请选择当前要查看的实验设备。</span>
+                <span class="block">现场也可扫描设备旁二维码直接进入。</span>
+              </p>
             </div>
           </div>
           <div id="deviceList" class="grid gap-4" aria-live="polite"></div>
