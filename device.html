@@ -25,6 +25,58 @@
       }
     };
   </script>
+  <style>
+    html,
+    body {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
+    #deviceRoot,
+    #deviceRoot * {
+      box-sizing: border-box;
+      max-width: 100%;
+    }
+
+    #deviceRoot p,
+    #deviceRoot li,
+    #deviceRoot h1,
+    #deviceRoot h2,
+    #deviceRoot h3 {
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .assistant-float {
+      position: fixed;
+      right: 1rem;
+      bottom: 1.25rem;
+      z-index: 60;
+    }
+
+    .device-hero {
+      max-width: calc(100vw - 2rem);
+      overflow: hidden;
+    }
+
+    .device-description {
+      max-width: calc(100vw - 4rem);
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    @media (min-width: 640px) {
+      .assistant-float {
+        right: 1.75rem;
+        bottom: 1.75rem;
+      }
+
+      .device-hero,
+      .device-description {
+        max-width: 100%;
+      }
+    }
+  </style>
 </head>
 <body class="min-h-screen overflow-x-hidden bg-slate-950 text-slate-100 antialiased">
   <main class="relative min-h-screen overflow-hidden">
@@ -36,11 +88,16 @@
 
     <div class="relative mx-auto w-full max-w-5xl px-4 py-6 sm:px-8 lg:px-10">
       <header class="mb-8 flex flex-wrap items-center justify-between gap-3 sm:gap-4">
-        <a href="index.html" class="inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-cyan-100 hover:text-white">
-          <span>←</span>
-          返回首页
+        <a href="index.html" class="inline-flex items-center gap-3" aria-label="返回机设通 AI 首页">
+          <img src="assets/jst-logo.svg" alt="机设通 AI" class="h-12 w-auto max-w-[13rem] drop-shadow-[0_0_16px_rgba(34,211,238,0.18)]" />
         </a>
-        <span class="max-w-full rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-medium leading-5 text-amber-200">现场操作请听从教师指导</span>
+        <div class="flex items-center gap-2">
+          <a href="index.html" class="inline-flex min-h-10 items-center gap-2 rounded-xl border border-cyan-300/25 bg-cyan-300/10 px-3 text-sm font-semibold text-cyan-100 hover:text-white">
+            <span>←</span>
+            返回首页
+          </a>
+          <span class="hidden max-w-full rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-medium leading-5 text-amber-200 sm:inline-flex">现场操作请听从教师指导</span>
+        </div>
       </header>
 
       <section id="deviceRoot" aria-live="polite"></section>
@@ -327,29 +384,69 @@
     function renderQaPanel(device) {
       const faqs = currentFaq.filter(item => item.deviceId === device.id);
       return `
-        <section class="rounded-3xl border border-slate-700 bg-slate-900/80 p-5 sm:p-6">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div class="min-w-0">
-              <p class="text-sm font-semibold text-cyan-200">基础问答</p>
-              <h2 class="mt-2 break-words text-2xl font-black text-white">设备 FAQ 安全助手</h2>
+        <button id="assistantFloatBtn" type="button" class="assistant-float flex w-20 flex-col items-center gap-1 rounded-2xl border border-cyan-300/35 bg-slate-950/95 p-2 text-center shadow-[0_0_34px_rgba(34,211,238,0.3)] backdrop-blur transition hover:-translate-y-1 hover:border-cyan-200 sm:w-auto sm:flex-row sm:gap-3 sm:pr-4 sm:text-left" aria-label="打开设备 FAQ 安全助手">
+          <span class="relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-cyan-200 via-sky-400 to-blue-700 shadow-[0_0_22px_rgba(34,211,238,0.35)] sm:h-14 sm:w-14">
+            <span class="absolute -right-1 -top-1 h-4 w-4 rounded-full border-2 border-slate-950 bg-emerald-300"></span>
+            <span class="grid h-10 w-10 place-items-center rounded-xl border border-white/55 bg-slate-950/20">
+              <span class="flex gap-1.5">
+                <span class="h-2 w-2 rounded-full bg-slate-950"></span>
+                <span class="h-2 w-2 rounded-full bg-slate-950"></span>
+              </span>
+            </span>
+          </span>
+          <span class="block min-w-0">
+            <span class="block whitespace-nowrap text-sm font-black text-white">问答助手</span>
+            <span class="hidden whitespace-nowrap text-xs text-cyan-100/80 sm:block">点我提问</span>
+          </span>
+        </button>
+
+        <div id="qaModal" class="fixed inset-0 z-50 hidden bg-slate-950/75 px-3 py-4 backdrop-blur-sm sm:px-6" role="dialog" aria-modal="true" aria-labelledby="qaModalTitle">
+          <div id="qaBackdrop" class="absolute inset-0"></div>
+          <section class="relative mx-auto flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-cyan-300/30 bg-slate-950 shadow-[0_0_54px_rgba(34,211,238,0.22)]">
+            <div class="relative overflow-hidden border-b border-slate-700 bg-gradient-to-br from-slate-900 via-slate-900 to-cyan-950 p-4 sm:p-5">
+              <div class="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-cyan-300/15 blur-2xl"></div>
+              <div class="relative flex items-start justify-between gap-3">
+                <div class="flex min-w-0 items-center gap-3">
+                  <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-cyan-200 via-sky-400 to-blue-700">
+                    <div class="grid h-8 w-8 place-items-center rounded-xl border border-white/55 bg-slate-950/20">
+                      <div class="flex gap-1.5">
+                        <span class="h-1.5 w-1.5 rounded-full bg-slate-950"></span>
+                        <span class="h-1.5 w-1.5 rounded-full bg-slate-950"></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-xs font-semibold text-cyan-200">已通过安全准入</p>
+                    <h2 id="qaModalTitle" class="mt-1 break-words text-xl font-black text-white">设备 FAQ 安全助手</h2>
+                    <p class="mt-1 text-xs leading-5 text-slate-400">${device.name} · 基础问题咨询</p>
+                  </div>
+                </div>
+                <button id="closeQaModalBtn" type="button" class="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-700 bg-slate-950/70 text-xl font-bold text-slate-200" aria-label="关闭问答弹窗">×</button>
+              </div>
             </div>
-            <span class="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 text-xs font-bold text-emerald-100">已通过安全准入</span>
-          </div>
-          <div class="mt-5 grid gap-2 sm:grid-cols-2">
-            ${faqs.slice(0, 4).map(item => `
-              <button type="button" class="faq-suggestion min-h-11 rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2 text-left text-sm leading-6 text-cyan-100 transition hover:border-cyan-300/60" data-question="${item.question}">${item.question}</button>
-            `).join('')}
-          </div>
-          <div class="mt-5 flex flex-col gap-3 sm:flex-row">
-            <input id="questionInput" type="text" class="min-h-12 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300" placeholder="例如：启动前需要检查什么？" />
-            <button id="askBtn" type="button" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-cyan-300 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-200 sm:w-auto">发送</button>
-          </div>
-          <div id="chatBox" class="mt-5 grid gap-3 rounded-2xl border border-slate-700 bg-slate-950/70 p-4 text-sm leading-7 text-slate-300">
-            <div class="max-w-[92%] rounded-2xl rounded-bl-sm border border-cyan-300/20 bg-cyan-300/10 p-3 text-cyan-50">
-              完成安全准入后，可输入设备相关基础问题。涉及启动、控制参数、维修和异常处理时，请以教师或实验员要求为准。
+
+            <div class="flex-1 overflow-y-auto p-4 sm:p-5">
+              <div class="grid gap-2 sm:grid-cols-2">
+                ${faqs.slice(0, 4).map(item => `
+                  <button type="button" class="faq-suggestion min-h-11 rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-left text-sm leading-6 text-cyan-50 transition hover:border-cyan-300/60" data-question="${item.question}">${item.question}</button>
+                `).join('')}
+              </div>
+              <div id="chatBox" class="mt-4 grid max-h-[42vh] gap-3 overflow-y-auto rounded-2xl border border-slate-700 bg-slate-900/70 p-4 text-sm leading-7 text-slate-300">
+                <div class="max-w-[92%] rounded-2xl rounded-bl-sm border border-cyan-300/20 bg-cyan-300/10 p-3 text-cyan-50">
+                  我是机设通 AI 设备安全助手。你可以问设备启动前检查、异常处理、使用结束注意事项等基础问题。
+                </div>
+              </div>
             </div>
-          </div>
-        </section>
+
+            <div class="border-t border-slate-700 bg-slate-950/95 p-3 sm:p-4">
+              <div class="flex flex-col gap-3 sm:flex-row">
+                <input id="questionInput" type="text" class="min-h-12 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300" placeholder="例如：无法启动怎么办？" />
+                <button id="askBtn" type="button" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-cyan-300 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-200 sm:w-auto">发送</button>
+              </div>
+              <p class="mt-2 text-xs leading-5 text-slate-500">AI 回答仅作学习辅助，涉及设备启动、控制参数、维修和异常处理时，请联系教师或实验员。</p>
+            </div>
+          </section>
+        </div>
       `;
     }
 
@@ -360,12 +457,12 @@
         : `<button type="button" disabled class="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-slate-700 bg-slate-800 px-5 py-3 text-sm font-bold text-slate-400 sm:w-auto">AI 设备助手待配置</button>`;
 
       root.innerHTML = `
-        <section class="min-w-0 rounded-3xl border border-cyan-300/20 bg-slate-900/80 p-4 shadow-glow sm:p-7">
+        <section class="device-hero min-w-0 rounded-3xl border border-cyan-300/20 bg-slate-900/80 p-4 shadow-glow sm:p-7">
           <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div class="min-w-0">
               <p class="mb-3 inline-flex max-w-full break-words rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-sm leading-6 text-cyan-100">${device.category}</p>
               <h1 class="break-words text-2xl font-black leading-tight text-white sm:text-5xl">${device.name}</h1>
-              <p class="mt-4 max-w-3xl text-base leading-8 text-slate-300">${device.description}</p>
+              <p class="device-description mt-4 break-all text-base leading-8 text-slate-300 sm:max-w-3xl sm:break-words">${device.description}</p>
             </div>
             <span class="w-fit rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-sm font-semibold text-amber-100">风险等级：${device.riskLevel}</span>
           </div>
@@ -477,6 +574,21 @@
       const askBtn = document.querySelector('#askBtn');
       const chatBox = document.querySelector('#chatBox');
       const suggestions = Array.from(document.querySelectorAll('.faq-suggestion'));
+      const modal = document.querySelector('#qaModal');
+      const openButton = document.querySelector('#assistantFloatBtn');
+      const closeButton = document.querySelector('#closeQaModalBtn');
+      const backdrop = document.querySelector('#qaBackdrop');
+
+      function openModal() {
+        modal.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+        setTimeout(() => input?.focus(), 60);
+      }
+
+      function closeModal() {
+        modal.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+      }
 
       function ask(question) {
         input.value = question;
@@ -489,10 +601,16 @@
             <p class="break-words">${escapeHtml(answer)}</p>
           </div>
         `);
-        chatBox.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        chatBox.scrollTop = chatBox.scrollHeight;
         input.value = '';
       }
 
+      openButton.addEventListener('click', openModal);
+      closeButton.addEventListener('click', closeModal);
+      backdrop.addEventListener('click', closeModal);
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+      });
       askBtn.addEventListener('click', () => ask(input.value));
       input.addEventListener('keydown', event => {
         if (event.key === 'Enter') ask(input.value);
