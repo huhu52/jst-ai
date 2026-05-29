@@ -126,8 +126,12 @@
             <p class="text-sm font-semibold text-cyan-200">设备链接列表</p>
             <h2 class="mt-2 break-words text-2xl font-black text-white">二维码部署</h2>
           </div>
-          <span class="hidden rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 text-xs font-bold text-emerald-100 sm:inline-flex">本页直接生成二维码</span>
+          <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap">
+            <a href="teacher-device.html?mode=new" class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-cyan-300 px-4 py-2 text-sm font-black text-slate-950 transition hover:bg-cyan-200 sm:w-auto">新增设备</a>
+            <button id="exportDevicesBtn" type="button" class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-emerald-300/35 bg-emerald-300/10 px-4 py-2 text-sm font-bold text-emerald-100 transition hover:border-emerald-200 sm:w-auto">导出线上同步文件</button>
+          </div>
         </div>
+        <p id="pageMessage" class="mt-4 hidden rounded-2xl border p-3 text-sm leading-6"></p>
         <div id="deviceQrList" class="mt-5 grid gap-4" aria-live="polite"></div>
       </section>
 
@@ -141,7 +145,7 @@
         </div>
         <div class="mt-4 grid gap-3 text-xs leading-6 text-amber-50/85 sm:grid-cols-2 lg:grid-cols-4">
           <p><strong class="text-amber-100">二维码：</strong>本页会直接生成每台设备的二维码，可下载 PNG 打印张贴；打印前请先用手机扫码测试。</p>
-          <p><strong class="text-amber-100">内容维护：</strong>设备资料维护在 data/devices.json，FAQ 维护在 data/faq.json，新增设备时保证 id 唯一。</p>
+          <p><strong class="text-amber-100">跨电脑演示：</strong>导出 devices.json 后上传替换 GitHub 仓库 data/devices.json，别人电脑打开线上链接即可看到最新设备。</p>
           <p><strong class="text-amber-100">AI 整理：</strong>可先用 AI 从说明书整理设备介绍、操作步骤、安全须知和 FAQ，再由教师或实验员审核。</p>
           <p><strong class="text-amber-100">学生访问：</strong>部署完成后，学生扫码打开设备页，查看说明、安全须知，并完成基础问答。</p>
         </div>
@@ -172,15 +176,44 @@
     ];
 
     const deployedBaseUrl = 'https://huhu52.github.io/jst-ai/';
+    let currentDevices = [];
 
     async function loadDevices() {
       try {
         const response = await fetch('data/devices.json', { cache: 'no-store' });
         if (!response.ok) throw new Error('devices.json load failed');
-        return applyDeviceOverrides(await response.json());
+        return prepareDevices(await response.json());
       } catch (error) {
-        return applyDeviceOverrides(fallbackDevices);
+        return prepareDevices(fallbackDevices);
       }
+    }
+
+    function readJsonStorage(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (error) {
+        return fallback;
+      }
+    }
+
+    function writeJsonStorage(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function readCustomDevices() {
+      return readJsonStorage('custom_devices', []);
+    }
+
+    function readDeletedDeviceIds() {
+      return readJsonStorage('deleted_device_ids', []);
+    }
+
+    function prepareDevices(baseDevices) {
+      const deletedIds = new Set(readDeletedDeviceIds());
+      const merged = [...baseDevices, ...readCustomDevices()];
+      const uniqueDevices = Array.from(new Map(merged.map(device => [device.id, device])).values());
+      return applyDeviceOverrides(uniqueDevices).filter(device => !deletedIds.has(device.id));
     }
 
     function applyDeviceOverrides(devices) {
@@ -192,6 +225,16 @@
           return device;
         }
       });
+    }
+
+    function showPageMessage(text, type = 'info') {
+      const message = document.querySelector('#pageMessage');
+      const color = type === 'error'
+        ? 'border-red-300/25 bg-red-500/10 text-red-100'
+        : 'border-emerald-300/25 bg-emerald-300/10 text-emerald-100';
+      message.className = `mt-4 rounded-2xl border p-3 text-sm leading-6 ${color}`;
+      message.textContent = text;
+      message.classList.remove('hidden');
     }
 
     function devicePath(deviceId) {
@@ -288,8 +331,55 @@
       document.body.removeChild(link);
     }
 
+    function downloadText(filename, text) {
+      const blob = new Blob([text], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    function deleteDevice(device) {
+      const ok = window.confirm(`确认删除「${device.name}」吗？删除后学生首页和设备页将不再显示该设备。`);
+      if (!ok) return;
+
+      const customDevices = readCustomDevices();
+      const isCustom = customDevices.some(item => item.id === device.id);
+      if (isCustom) {
+        writeJsonStorage('custom_devices', customDevices.filter(item => item.id !== device.id));
+      } else {
+        const deletedIds = new Set(readDeletedDeviceIds());
+        deletedIds.add(device.id);
+        writeJsonStorage('deleted_device_ids', Array.from(deletedIds));
+      }
+
+      localStorage.removeItem(`device_override_${device.id}`);
+      localStorage.removeItem(`access_${device.id}`);
+      showPageMessage(`已删除「${device.name}」。别人电脑演示请导出 devices.json 并上传到 GitHub。`);
+      loadDevices().then(renderDevices);
+    }
+
+    function exportLatestDevices() {
+      downloadText('devices.json', `${JSON.stringify(currentDevices, null, 2)}\n`);
+      showPageMessage('已导出 devices.json。上传替换 GitHub 仓库 data/devices.json 后，别人电脑打开线上链接即可同步看到。');
+    }
+
     function renderDevices(devices) {
+      currentDevices = devices;
       const list = document.querySelector('#deviceQrList');
+      if (!devices.length) {
+        list.innerHTML = `
+          <section class="rounded-2xl border border-amber-300/25 bg-amber-300/10 p-5 text-sm leading-7 text-amber-100">
+            当前没有可展示设备。请点击“新增设备”添加第一台设备。
+          </section>
+        `;
+        return;
+      }
+
       list.innerHTML = devices.map((device) => {
         const fullUrl = fullDeviceUrl(device.id);
         const qrId = `qr-${safeDomId(device.id)}`;
@@ -310,6 +400,7 @@
                 <a href="${teacherDevicePath(device.id)}" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-bold text-cyan-100 transition hover:border-cyan-300/60 sm:w-auto">打开编辑页</a>
                 <button type="button" class="copy-link inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-cyan-300 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-200 sm:w-auto" data-url="${fullUrl}">复制链接</button>
                 <button type="button" class="download-qr inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-emerald-300/40 bg-emerald-300/10 px-4 py-3 text-sm font-bold text-emerald-100 transition hover:border-emerald-200 sm:w-auto" data-device-id="${device.id}">下载二维码</button>
+                <button type="button" class="delete-device inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-red-300/30 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-100 transition hover:bg-red-500/15 sm:w-auto" data-device-id="${device.id}">删除设备</button>
               </div>
             </div>
             <div class="mx-auto w-full max-w-[220px] rounded-2xl border border-white/10 bg-white p-3 shadow-glow lg:mx-0">
@@ -329,9 +420,15 @@
         if (device) button.addEventListener('click', () => downloadQrCode(device, button));
       });
 
+      document.querySelectorAll('.delete-device').forEach((button) => {
+        const device = devices.find((item) => item.id === button.dataset.deviceId);
+        if (device) button.addEventListener('click', () => deleteDevice(device));
+      });
+
       generateAllQrCodes(devices);
     }
 
+    document.querySelector('#exportDevicesBtn').addEventListener('click', exportLatestDevices);
     loadDevices().then(renderDevices);
   </script>
 </body>
