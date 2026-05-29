@@ -166,7 +166,7 @@
         id: getDeviceId(),
         name: document.querySelector('#name').value.trim(),
         category: document.querySelector('#category').value.trim(),
-        riskLevel: document.querySelector('#riskLevel').value,
+        riskLevel: loadedDevices.find(item => item.id === getDeviceId())?.riskLevel || '中',
         description: document.querySelector('#description').value.trim(),
         scenarios: splitLines(document.querySelector('#scenarios').value),
         checks: splitLines(document.querySelector('#checks').value),
@@ -179,7 +179,6 @@
     function fillForm(device) {
       document.querySelector('#name').value = device.name || '';
       document.querySelector('#category').value = device.category || '';
-      document.querySelector('#riskLevel').value = device.riskLevel || '中';
       document.querySelector('#description').value = device.description || '';
       document.querySelector('#scenarios').value = joinLines(device.scenarios);
       document.querySelector('#checks').value = joinLines(device.checks);
@@ -204,14 +203,6 @@
             <div class="grid gap-4 sm:grid-cols-2">
               ${field('设备名称', 'name', device.name)}
               ${field('设备类型', 'category', device.category)}
-              <label class="block">
-                <span class="text-sm font-semibold text-cyan-100">风险等级</span>
-                <select id="riskLevel" class="mt-2 min-h-12 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 text-sm text-white outline-none transition focus:border-cyan-300">
-                  <option value="低">低</option>
-                  <option value="中">中</option>
-                  <option value="高">高</option>
-                </select>
-              </label>
               ${field('AI 设备助手链接', 'aiUrl', device.aiUrl || '', 'url')}
             </div>
             <div class="mt-4 grid gap-4">
@@ -247,7 +238,6 @@
           </aside>
         </div>
       `;
-      document.querySelector('#riskLevel').value = device.riskLevel || '中';
       setupEditorActions(device);
     }
 
