@@ -46,7 +46,7 @@
       <section class="mt-8 rounded-3xl border border-cyan-300/20 bg-slate-900/80 p-5 shadow-glow sm:p-6">
         <p class="text-sm font-semibold text-cyan-200">教师编辑页</p>
         <h1 id="pageTitle" class="mt-2 break-words text-3xl font-black leading-tight text-white sm:text-5xl">设备信息编辑</h1>
-        <p class="mt-4 max-w-3xl text-sm leading-7 text-slate-400">可编辑学生端展示的设备简介、操作步骤、安全须知等内容。当前版本不做后台和数据库，保存结果会写入本机浏览器 localStorage，用于本机演示；正式上线时请同步更新 data/devices.json。</p>
+        <p class="mt-4 max-w-3xl text-sm leading-7 text-slate-400">可编辑学生端展示的设备简介、操作步骤、安全须知等内容。无后台和数据库，跨电脑演示请以线上 GitHub Pages 为准：编辑后导出 devices.json，并上传替换 GitHub 仓库 data/devices.json。</p>
       </section>
 
       <section id="editorRoot" class="mt-6" aria-live="polite"></section>
@@ -93,23 +93,60 @@
       }
     ];
     let loadedDevices = [];
+    const previewDraftKey = 'teacher_preview_device_draft';
 
     function getDeviceId() {
       return new URLSearchParams(window.location.search).get('id') || '';
+    }
+
+    function isNewMode() {
+      return new URLSearchParams(window.location.search).get('mode') === 'new';
+    }
+
+    function isFromPreview() {
+      return new URLSearchParams(window.location.search).get('fromPreview') === '1';
     }
 
     async function loadDevices() {
       try {
         const response = await fetch('data/devices.json', { cache: 'no-store' });
         if (!response.ok) throw new Error('devices.json load failed');
-        return applyDeviceOverrides(await response.json());
+        return prepareDevices(await response.json());
       } catch (error) {
-        return applyDeviceOverrides(fallbackDevices);
+        return prepareDevices(fallbackDevices);
       }
     }
 
     function overrideKey(deviceId) {
       return `device_override_${deviceId}`;
+    }
+
+    function readJsonStorage(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (error) {
+        return fallback;
+      }
+    }
+
+    function writeJsonStorage(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function readCustomDevices() {
+      return readJsonStorage('custom_devices', []);
+    }
+
+    function readDeletedDeviceIds() {
+      return readJsonStorage('deleted_device_ids', []);
+    }
+
+    function prepareDevices(baseDevices) {
+      const deletedIds = new Set(readDeletedDeviceIds());
+      const merged = [...baseDevices, ...readCustomDevices()];
+      const uniqueDevices = Array.from(new Map(merged.map(device => [device.id, device])).values());
+      return applyDeviceOverrides(uniqueDevices).filter(device => !deletedIds.has(device.id));
     }
 
     function applyDeviceOverrides(devices) {
@@ -152,6 +189,16 @@
       `;
     }
 
+    function idField(device, readonly = false) {
+      return `
+        <label class="block">
+          <span class="text-sm font-semibold text-cyan-100">设备 ID</span>
+          <input id="deviceIdInput" type="text" value="${escapeHtml(device.id)}" ${readonly ? 'readonly' : ''} class="mt-2 min-h-12 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300 ${readonly ? 'opacity-70' : ''}" placeholder="例如：cnc-platform" />
+          <span class="mt-1 block text-xs leading-5 text-slate-500">建议使用英文小写、数字和短横线，保存后会生成 device.html?id=设备ID。</span>
+        </label>
+      `;
+    }
+
     function textareaField(label, id, value, rows = 5) {
       return `
         <label class="block">
@@ -162,11 +209,14 @@
     }
 
     function collectDevice() {
+      const rawId = isNewMode()
+        ? document.querySelector('#deviceIdInput').value.trim()
+        : getDeviceId();
       return {
-        id: getDeviceId(),
+        id: rawId,
         name: document.querySelector('#name').value.trim(),
         category: document.querySelector('#category').value.trim(),
-        riskLevel: loadedDevices.find(item => item.id === getDeviceId())?.riskLevel || '中',
+        riskLevel: loadedDevices.find(item => item.id === rawId)?.riskLevel || '中',
         description: document.querySelector('#description').value.trim(),
         scenarios: splitLines(document.querySelector('#scenarios').value),
         checks: splitLines(document.querySelector('#checks').value),
@@ -177,6 +227,8 @@
     }
 
     function fillForm(device) {
+      const idInput = document.querySelector('#deviceIdInput');
+      if (idInput && !idInput.readOnly) idInput.value = device.id || '';
       document.querySelector('#name').value = device.name || '';
       document.querySelector('#category').value = device.category || '';
       document.querySelector('#description').value = device.description || '';
@@ -195,12 +247,53 @@
       message.classList.remove('hidden');
     }
 
-    function renderEditor(device) {
-      document.querySelector('#pageTitle').textContent = `${device.name} 信息编辑`;
+    function readPreviewDraft() {
+      const urlDraft = new URLSearchParams(window.location.search).get('draft');
+      if (urlDraft) {
+        try {
+          const text = urlDraft.trim().startsWith('{') ? urlDraft : decodeURIComponent(urlDraft);
+          const draft = JSON.parse(text);
+          return draft && typeof draft === 'object' ? draft : null;
+        } catch (error) {
+          return null;
+        }
+      }
+      if (!isFromPreview()) return null;
+      try {
+        const raw = sessionStorage.getItem(previewDraftKey);
+        return raw ? JSON.parse(raw) : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function previewDeviceUrl(device) {
+      const encoded = encodeURIComponent(JSON.stringify(device));
+      const returnUrl = isNewMode()
+        ? `teacher-device.html?mode=new&fromPreview=1&draft=${encoded}`
+        : `teacher-device.html?id=${encodeURIComponent(device.id)}&fromPreview=1&draft=${encoded}`;
+      return `device.html?id=${encodeURIComponent(device.id)}&previewDevice=${encoded}&teacherPreview=1&teacherReturn=${encodeURIComponent(returnUrl)}`;
+    }
+
+    function openPreviewDevice() {
+      const device = collectDevice();
+      if (!validateDevice(device, isNewMode())) return;
+      try {
+        sessionStorage.setItem(previewDraftKey, JSON.stringify(device));
+      } catch (error) {
+        // If sessionStorage is blocked, URL preview still works with previewDevice.
+      }
+      window.location.href = previewDeviceUrl(device);
+    }
+
+    function renderEditor(device, mode = 'edit') {
+      const creating = mode === 'new';
+      document.querySelector('#pageTitle').textContent = creating ? '新增设备' : `${device.name} 信息编辑`;
       document.querySelector('#editorRoot').innerHTML = `
         <div class="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
           <section class="rounded-3xl border border-slate-700 bg-slate-900/80 p-5 sm:p-6">
             <div class="grid gap-4 sm:grid-cols-2">
+              ${idField(device, !creating)}
               ${field('设备名称', 'name', device.name)}
               ${field('设备类型', 'category', device.category)}
               ${field('AI 设备助手链接', 'aiUrl', device.aiUrl || '', 'url')}
@@ -215,9 +308,9 @@
             <div class="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <button id="saveBackBtn" type="button" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-cyan-300 px-5 py-3 text-sm font-black text-slate-950 transition hover:bg-cyan-200 sm:w-auto">保存并返回教师首页</button>
               <button id="saveBtn" type="button" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-cyan-300/30 bg-cyan-300/10 px-5 py-3 text-sm font-bold text-cyan-100 transition hover:bg-cyan-300/15 sm:w-auto">保存本机预览</button>
+              <button id="previewBtn" type="button" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-blue-300/30 bg-blue-400/10 px-5 py-3 text-sm font-bold text-blue-100 transition hover:border-blue-200 sm:w-auto">预览学生页</button>
               <button id="exportBtn" type="button" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-emerald-300/30 bg-emerald-300/10 px-5 py-3 text-sm font-bold text-emerald-100 transition hover:bg-emerald-300/15 sm:w-auto">导出 devices.json</button>
-              <a href="device.html?id=${encodeURIComponent(device.id)}" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-slate-700 bg-slate-950 px-5 py-3 text-sm font-bold text-slate-100 transition hover:border-cyan-300/60 sm:w-auto">预览学生页</a>
-              <button id="resetBtn" type="button" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-red-300/30 bg-red-500/10 px-5 py-3 text-sm font-bold text-red-100 transition hover:bg-red-500/15 sm:w-auto">清除本机修改</button>
+              ${creating ? '' : `<button id="resetBtn" type="button" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-red-300/30 bg-red-500/10 px-5 py-3 text-sm font-bold text-red-100 transition hover:bg-red-500/15 sm:w-auto">清除本机修改</button>`}
             </div>
             <div id="message" class="hidden"></div>
           </section>
@@ -238,21 +331,62 @@
           </aside>
         </div>
       `;
-      setupEditorActions(device);
+      setupEditorActions(device, creating);
     }
 
-    function saveCurrentDevice() {
-      const device = collectDevice();
+    function validateDevice(device, creating) {
+      if (!device.id || !/^[a-z0-9-]+$/.test(device.id)) {
+        showMessage('设备 ID 必须填写，且只能使用英文小写、数字和短横线，例如 robot-dog。', 'error');
+        return false;
+      }
       if (!device.name || !device.category || !device.description) {
         showMessage('请至少填写设备名称、设备类型和设备简介。', 'error');
-        return null;
+        return false;
       }
+      if (!device.scenarios.length || !device.checks.length || !device.steps.length || !device.warnings.length) {
+        showMessage('请至少填写使用场景、操作前检查、基础操作步骤和安全注意事项。', 'error');
+        return false;
+      }
+      const customIds = new Set(readCustomDevices().map(item => item.id));
+      if (creating && loadedDevices.some(item => item.id === device.id) && !customIds.has(device.id)) {
+        showMessage('设备 ID 已存在，请换一个唯一 ID。', 'error');
+        return false;
+      }
+      return true;
+    }
+
+    function saveCustomDevice(device) {
+      const customDevices = readCustomDevices();
+      const nextDevices = customDevices.some(item => item.id === device.id)
+        ? customDevices.map(item => item.id === device.id ? device : item)
+        : [...customDevices, device];
+      writeJsonStorage('custom_devices', nextDevices);
+      const deletedIds = readDeletedDeviceIds().filter(id => id !== device.id);
+      writeJsonStorage('deleted_device_ids', deletedIds);
+    }
+
+    function saveCurrentDevice(creating = false) {
+      const device = collectDevice();
+      if (!validateDevice(device, creating)) return null;
+
+      const customDevices = readCustomDevices();
+      const isCustom = customDevices.some(item => item.id === device.id);
       try {
-        localStorage.setItem(overrideKey(device.id), JSON.stringify(device));
-        showMessage('已保存到本机浏览器，学生页刷新后可看到更新。');
+        if (creating || isCustom) {
+          saveCustomDevice(device);
+        } else {
+          localStorage.setItem(overrideKey(device.id), JSON.stringify(device));
+        }
+        loadedDevices = prepareDevices(loadedDevices);
+        showMessage(creating ? '已新增设备到本机预览。若要在别人电脑同步，请导出 devices.json 并上传到 GitHub。' : '已保存到本机浏览器。若要在别人电脑同步，请导出 devices.json 并上传到 GitHub。');
         return device;
       } catch (error) {
-        showMessage('当前浏览器未能写入本机缓存，请复制表单内容后手动更新 data/devices.json。', 'error');
+        const exists = loadedDevices.some(item => item.id === device.id);
+        const nextDevices = exists
+          ? loadedDevices.map(item => item.id === device.id ? device : item)
+          : [...loadedDevices, device];
+        downloadText('devices.json', `${JSON.stringify(nextDevices, null, 2)}\n`);
+        showMessage('当前 file:// 本地文件模式不能写入本机缓存，已自动导出 devices.json。你仍可点击“预览学生页”查看当前表单效果；别人电脑演示请上传替换 GitHub 仓库 data/devices.json。', 'error');
         return null;
       }
     }
@@ -271,22 +405,36 @@
 
     function exportDevicesJson() {
       const current = collectDevice();
-      const nextDevices = loadedDevices.map((device) => device.id === current.id ? current : device);
+      const exists = loadedDevices.some(device => device.id === current.id);
+      const nextDevices = exists
+        ? loadedDevices.map((device) => device.id === current.id ? current : device)
+        : [...loadedDevices, current];
       downloadText('devices.json', `${JSON.stringify(nextDevices, null, 2)}\n`);
       showMessage('已导出 devices.json。上线维护时，把它替换到 GitHub 仓库的 data/devices.json。');
     }
 
-    function setupEditorActions(originalDevice) {
-      document.querySelector('#saveBtn').addEventListener('click', saveCurrentDevice);
+    function setupEditorActions(originalDevice, creating) {
+      document.querySelector('#saveBtn').addEventListener('click', () => saveCurrentDevice(creating));
+      document.querySelector('#previewBtn').addEventListener('click', openPreviewDevice);
       document.querySelector('#exportBtn').addEventListener('click', exportDevicesJson);
       document.querySelector('#saveBackBtn').addEventListener('click', () => {
-        if (saveCurrentDevice()) window.location.href = 'qr.html';
+        if (saveCurrentDevice(creating)) window.location.href = 'qr.html';
       });
-      document.querySelector('#resetBtn').addEventListener('click', () => {
-        localStorage.removeItem(overrideKey(originalDevice.id));
-        showMessage('已清除本机修改，页面将恢复为 data/devices.json 中的内容。');
-        window.setTimeout(() => window.location.reload(), 500);
-      });
+      const resetButton = document.querySelector('#resetBtn');
+      if (resetButton) {
+        resetButton.addEventListener('click', () => {
+          const customDevices = readCustomDevices();
+          if (customDevices.some(item => item.id === originalDevice.id)) {
+            writeJsonStorage('custom_devices', customDevices.filter(item => item.id !== originalDevice.id));
+            showMessage('已清除本机新增设备，页面将返回教师首页。');
+            window.setTimeout(() => window.location.href = 'qr.html', 500);
+            return;
+          }
+          localStorage.removeItem(overrideKey(originalDevice.id));
+          showMessage('已清除本机修改，页面将恢复为 data/devices.json 中的内容。');
+          window.setTimeout(() => window.location.reload(), 500);
+        });
+      }
       document.querySelector('#docFile').addEventListener('change', async (event) => {
         const file = event.target.files[0];
         if (!file) return;
@@ -296,10 +444,10 @@
           try {
             const parsed = JSON.parse(text);
             const device = Array.isArray(parsed)
-              ? parsed.find(item => item.id === originalDevice.id)
+              ? (creating ? parsed[0] : parsed.find(item => item.id === originalDevice.id))
               : parsed;
             if (!device || typeof device !== 'object') throw new Error('invalid device json');
-            fillForm({ ...originalDevice, ...device, id: originalDevice.id });
+            fillForm({ ...originalDevice, ...device, id: creating ? (device.id || '') : originalDevice.id });
             showMessage('已从 JSON 自动填入表单，请人工审核安全内容后保存。');
           } catch (error) {
             showMessage('JSON 无法识别，请检查格式，或把内容作为参考手动填写。', 'error');
@@ -322,16 +470,37 @@
     }
 
     async function init() {
-      const deviceId = getDeviceId();
       const devices = await loadDevices();
       loadedDevices = devices;
+      if (isNewMode()) {
+        const draftDevice = readPreviewDraft();
+        const newDevice = draftDevice || {
+          id: '',
+          name: '',
+          category: '',
+          riskLevel: '中',
+          description: '',
+          scenarios: [],
+          checks: [],
+          steps: [],
+          warnings: [],
+          aiUrl: ''
+        };
+        document.title = '新增设备 - 机设通 AI';
+        renderEditor(newDevice, 'new');
+        return;
+      }
+
+      const deviceId = getDeviceId();
       const device = devices.find(item => item.id === deviceId);
       if (!device) {
         renderNotFound(deviceId);
         return;
       }
-      document.title = `${device.name} 信息编辑 - 机设通 AI`;
-      renderEditor(device);
+      const draftDevice = readPreviewDraft();
+      const deviceForEdit = draftDevice && draftDevice.id === device.id ? { ...device, ...draftDevice } : device;
+      document.title = `${deviceForEdit.name} 信息编辑 - 机设通 AI`;
+      renderEditor(deviceForEdit);
     }
 
     init();
