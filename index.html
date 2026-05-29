@@ -83,6 +83,21 @@
       display: none;
     }
 
+    .assistant-float {
+      position: fixed;
+      right: 1rem;
+      bottom: 1.25rem;
+      z-index: 60;
+      touch-action: none;
+      user-select: none;
+      cursor: grab;
+    }
+
+    .assistant-float.is-dragging {
+      cursor: grabbing;
+      transition: none;
+    }
+
     @keyframes gridDrift {
       from { background-position: 0 0, 0 0, 0 0, 0 0; }
       to { background-position: 32px 32px, 32px 32px, 80px 80px, 80px 80px; }
@@ -116,10 +131,6 @@
       <header class="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
         <a href="index.html" class="flex items-center gap-3" aria-label="机设通 AI 首页">
           <img src="assets/jst-logo.svg" alt="机设通 AI" class="h-14 w-auto max-w-[14rem] drop-shadow-[0_0_16px_rgba(34,211,238,0.18)]" />
-          <span class="hidden min-w-0 sm:block">
-            <span class="block text-base font-semibold tracking-wide text-white">机设通 AI</span>
-            <span class="block text-xs text-slate-400">扫码操作与安全问答</span>
-          </span>
         </a>
         <div class="flex flex-wrap items-center gap-2">
           <span class="hidden rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-medium text-amber-200 sm:inline-flex">实验安全优先</span>
@@ -190,6 +201,71 @@
         </div>
       </section>
     </div>
+  </div>
+
+  <button id="assistantFloatBtn" type="button" class="assistant-float flex w-20 flex-col items-center gap-1 rounded-2xl border border-cyan-300/35 bg-slate-950/95 p-2 text-center shadow-[0_0_34px_rgba(34,211,238,0.3)] backdrop-blur transition hover:-translate-y-1 hover:border-cyan-200 sm:w-auto sm:flex-row sm:gap-3 sm:pr-4 sm:text-left" aria-label="打开问答助手">
+    <span class="relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-cyan-200 via-sky-400 to-blue-700 shadow-[0_0_22px_rgba(34,211,238,0.35)] sm:h-14 sm:w-14">
+      <span class="absolute -right-1 -top-1 h-4 w-4 rounded-full border-2 border-slate-950 bg-emerald-300"></span>
+      <span class="grid h-10 w-10 place-items-center rounded-xl border border-white/55 bg-slate-950/20">
+        <span class="flex gap-1.5">
+          <span class="h-2 w-2 rounded-full bg-slate-950"></span>
+          <span class="h-2 w-2 rounded-full bg-slate-950"></span>
+        </span>
+      </span>
+    </span>
+    <span class="block min-w-0">
+      <span class="block whitespace-nowrap text-sm font-black text-white">问答助手</span>
+      <span class="hidden whitespace-nowrap text-xs text-cyan-100/80 sm:block">可拖动</span>
+    </span>
+  </button>
+
+  <div id="qaModal" class="fixed inset-0 z-50 hidden bg-slate-950/75 px-3 py-4 backdrop-blur-sm sm:px-6" role="dialog" aria-modal="true" aria-labelledby="qaModalTitle">
+    <div id="qaBackdrop" class="absolute inset-0"></div>
+    <section class="relative mx-auto flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-cyan-300/30 bg-slate-950 shadow-[0_0_54px_rgba(34,211,238,0.22)]">
+      <div class="relative overflow-hidden border-b border-slate-700 bg-gradient-to-br from-slate-900 via-slate-900 to-cyan-950 p-4 sm:p-5">
+        <div class="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-cyan-300/15 blur-2xl"></div>
+        <div class="relative flex items-start justify-between gap-3">
+          <div class="flex min-w-0 items-center gap-3">
+            <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-cyan-200 via-sky-400 to-blue-700">
+              <div class="grid h-8 w-8 place-items-center rounded-xl border border-white/55 bg-slate-950/20">
+                <div class="flex gap-1.5">
+                  <span class="h-1.5 w-1.5 rounded-full bg-slate-950"></span>
+                  <span class="h-1.5 w-1.5 rounded-full bg-slate-950"></span>
+                </div>
+              </div>
+            </div>
+            <div class="min-w-0">
+              <p class="text-xs font-semibold text-cyan-200">学生首页问答</p>
+              <h2 id="qaModalTitle" class="mt-1 break-words text-xl font-black text-white">机设通 AI 问答助手</h2>
+              <p class="mt-1 text-xs leading-5 text-slate-400">可询问扫码、设备选择、安全确认和基础使用流程</p>
+            </div>
+          </div>
+          <button id="closeQaModalBtn" type="button" class="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-700 bg-slate-950/70 text-xl font-bold text-slate-200" aria-label="关闭问答弹窗">×</button>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-4 sm:p-5">
+        <div class="grid gap-2 sm:grid-cols-2">
+          <button type="button" class="faq-suggestion min-h-11 rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-left text-sm leading-6 text-cyan-50 transition hover:border-cyan-300/60" data-question="怎么扫描设备二维码？">怎么扫描设备二维码？</button>
+          <button type="button" class="faq-suggestion min-h-11 rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-left text-sm leading-6 text-cyan-50 transition hover:border-cyan-300/60" data-question="怎么选择设备？">怎么选择设备？</button>
+          <button type="button" class="faq-suggestion min-h-11 rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-left text-sm leading-6 text-cyan-50 transition hover:border-cyan-300/60" data-question="安全确认是什么？">安全确认是什么？</button>
+          <button type="button" class="faq-suggestion min-h-11 rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-left text-sm leading-6 text-cyan-50 transition hover:border-cyan-300/60" data-question="问答助手可以问什么？">问答助手可以问什么？</button>
+        </div>
+        <div id="chatBox" class="mt-4 grid max-h-[42vh] gap-3 overflow-y-auto rounded-2xl border border-slate-700 bg-slate-900/70 p-4 text-sm leading-7 text-slate-300">
+          <div class="max-w-[92%] rounded-2xl rounded-bl-sm border border-cyan-300/20 bg-cyan-300/10 p-3 text-cyan-50">
+            我是机设通 AI 问答助手。你可以问如何扫码、如何选择设备、如何完成安全确认，也可以进入具体设备页后问设备相关问题。
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-slate-700 bg-slate-950/95 p-3 sm:p-4">
+        <div class="flex flex-col gap-3 sm:flex-row">
+          <input id="questionInput" type="text" class="min-h-12 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300" placeholder="例如：怎么扫描二维码？" />
+          <button id="askBtn" type="button" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-cyan-300 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-200 sm:w-auto">发送</button>
+        </div>
+        <p class="mt-2 text-xs leading-5 text-slate-500">涉及设备启动、控制参数、维修和异常处理时，请联系教师或实验员。</p>
+      </div>
+    </section>
   </div>
 
   <script>
@@ -362,7 +438,6 @@
               <h3 class="break-words text-lg font-bold text-white group-hover:text-cyan-100">${device.name}</h3>
               <p class="mt-1 break-words text-sm text-slate-400">${device.category}</p>
             </div>
-            <span class="shrink-0 rounded-full border px-2.5 py-1 text-xs font-bold ${device.riskLevel === '高' ? 'border-red-300/40 bg-red-400/15 text-red-100' : 'border-amber-300/35 bg-amber-300/12 text-amber-100'}">风险 ${device.riskLevel}</span>
           </div>
           <p class="mt-3 break-words text-sm leading-6 text-slate-300">${device.description}</p>
           <span class="mt-4 inline-flex min-h-10 items-center rounded-xl bg-cyan-300/10 px-3 py-2 text-sm font-bold text-cyan-100 transition group-hover:bg-cyan-300 group-hover:text-slate-950">进入设备页 <span class="ml-1 transition group-hover:translate-x-1">→</span></span>
@@ -371,7 +446,180 @@
 
     }
 
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function setupDraggableAssistant(button, storageKey, onTap) {
+      let pointerId = null;
+      let startX = 0;
+      let startY = 0;
+      let originX = 0;
+      let originY = 0;
+      let dragged = false;
+
+      function clampPosition(x, y, rect) {
+        const margin = 8;
+        return {
+          x: Math.min(Math.max(margin, x), window.innerWidth - rect.width - margin),
+          y: Math.min(Math.max(margin, y), window.innerHeight - rect.height - margin)
+        };
+      }
+
+      function applyPosition(x, y) {
+        const rect = button.getBoundingClientRect();
+        const next = clampPosition(x, y, rect);
+        button.style.left = `${next.x}px`;
+        button.style.top = `${next.y}px`;
+        button.style.right = 'auto';
+        button.style.bottom = 'auto';
+        return next;
+      }
+
+      try {
+        const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
+        if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) {
+          window.requestAnimationFrame(() => applyPosition(saved.x, saved.y));
+        }
+      } catch (error) {}
+
+      button.addEventListener('pointerdown', (event) => {
+        if (event.button && event.button !== 0) return;
+        pointerId = event.pointerId;
+        dragged = false;
+        startX = event.clientX;
+        startY = event.clientY;
+        const rect = button.getBoundingClientRect();
+        originX = rect.left;
+        originY = rect.top;
+        button.setPointerCapture(pointerId);
+        button.classList.add('is-dragging');
+      });
+
+      button.addEventListener('pointermove', (event) => {
+        if (event.pointerId !== pointerId) return;
+        const dx = event.clientX - startX;
+        const dy = event.clientY - startY;
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) dragged = true;
+        if (!dragged) return;
+        event.preventDefault();
+        applyPosition(originX + dx, originY + dy);
+      });
+
+      button.addEventListener('pointerup', (event) => {
+        if (event.pointerId !== pointerId) return;
+        button.releasePointerCapture(pointerId);
+        button.classList.remove('is-dragging');
+        pointerId = null;
+        if (dragged) {
+          const rect = button.getBoundingClientRect();
+          try {
+            localStorage.setItem(storageKey, JSON.stringify({ x: Math.round(rect.left), y: Math.round(rect.top) }));
+          } catch (error) {}
+          return;
+        }
+        onTap();
+      });
+
+      button.addEventListener('pointercancel', () => {
+        pointerId = null;
+        button.classList.remove('is-dragging');
+      });
+
+      button.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onTap();
+        }
+      });
+    }
+
+    function findHomeAnswer(question) {
+      const normalized = question.trim().toLowerCase();
+      if (!normalized) return '请先输入你想咨询的问题。';
+      const answers = [
+        {
+          keywords: ['扫码', '二维码', '扫描'],
+          answer: '点击首页的“扫描设备二维码”，允许摄像头权限后对准设备旁二维码即可。也可以上传二维码图片识别。'
+        },
+        {
+          keywords: ['选择设备', '设备', '机器狗', '机械臂', '实验教学平台'],
+          answer: '可以在首页“选择实验设备”区域进入对应设备页。现场使用时，也可以直接扫描设备旁二维码进入设备页。'
+        },
+        {
+          keywords: ['安全确认', '安全准入', '通行证'],
+          answer: '进入设备页后，请先阅读设备说明和安全注意事项，再点击“开始安全准入”。全部确认后会生成实验设备安全通行证。'
+        },
+        {
+          keywords: ['问答', '助手', '提问', 'faq'],
+          answer: '问答助手会一直显示在页面右下角，也可以拖到你喜欢的位置。首页回答使用流程问题，设备页回答当前设备的基础 FAQ。'
+        },
+        {
+          keywords: ['老师', '教师', '二维码部署'],
+          answer: '教师或实验员可以单独打开 qr.html 教师页，复制设备链接、生成并下载设备二维码。'
+        }
+      ];
+      const matched = answers.find(item => item.keywords.some(keyword => normalized.includes(keyword)));
+      return matched ? matched.answer : '暂未找到相关答案。建议先选择具体设备进入设备页查看说明；涉及设备启动、维修、参数修改和异常处理时，请联系教师或实验员。';
+    }
+
+    function setupHomeAssistant() {
+      const input = document.querySelector('#questionInput');
+      const askBtn = document.querySelector('#askBtn');
+      const chatBox = document.querySelector('#chatBox');
+      const suggestions = Array.from(document.querySelectorAll('.faq-suggestion'));
+      const modal = document.querySelector('#qaModal');
+      const openButton = document.querySelector('#assistantFloatBtn');
+      const closeButton = document.querySelector('#closeQaModalBtn');
+      const backdrop = document.querySelector('#qaBackdrop');
+
+      function openModal() {
+        modal.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+        setTimeout(() => input?.focus(), 60);
+      }
+
+      function closeModal() {
+        modal.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+      }
+
+      function ask(question) {
+        const answer = findHomeAnswer(question);
+        chatBox.insertAdjacentHTML('beforeend', `
+          <div class="ml-auto max-w-[92%] rounded-2xl rounded-br-sm bg-blue-500 px-4 py-3 text-white">
+            <p class="break-words">${escapeHtml(question || '未输入')}</p>
+          </div>
+          <div class="mr-auto max-w-[92%] rounded-2xl rounded-bl-sm border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-cyan-50">
+            <p class="break-words">${escapeHtml(answer)}</p>
+          </div>
+        `);
+        chatBox.scrollTop = chatBox.scrollHeight;
+        input.value = '';
+      }
+
+      setupDraggableAssistant(openButton, 'assistant_home_position', openModal);
+      closeButton.addEventListener('click', closeModal);
+      backdrop.addEventListener('click', closeModal);
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+      });
+      askBtn.addEventListener('click', () => ask(input.value.trim()));
+      input.addEventListener('keydown', event => {
+        if (event.key === 'Enter') ask(input.value.trim());
+      });
+      suggestions.forEach(button => {
+        button.addEventListener('click', () => ask(button.dataset.question));
+      });
+    }
+
     setupQrScanner();
+    setupHomeAssistant();
     loadDevices().then(renderDevices);
   </script>
 </body>
