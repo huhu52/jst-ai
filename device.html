@@ -96,18 +96,19 @@
 
     <div class="relative mx-auto w-full max-w-5xl px-4 py-6 sm:px-8 lg:px-10">
       <header class="mb-8 flex flex-wrap items-center justify-between gap-3 sm:gap-4">
-        <a href="index.html" class="inline-flex items-center gap-3" aria-label="返回机设通 AI 首页">
+        <a id="headerLogoLink" href="index.html" class="inline-flex items-center gap-3" aria-label="返回机设通 AI 首页">
           <img src="assets/jst-logo.svg" alt="机设通 AI" class="h-12 w-auto max-w-[13rem] drop-shadow-[0_0_16px_rgba(34,211,238,0.18)]" />
         </a>
         <div class="flex items-center gap-2">
-          <a href="index.html" class="inline-flex min-h-10 items-center gap-2 rounded-xl border border-cyan-300/25 bg-cyan-300/10 px-3 text-sm font-semibold text-cyan-100 hover:text-white">
+          <a id="headerBackLink" href="index.html" class="inline-flex min-h-10 items-center gap-2 rounded-xl border border-cyan-300/25 bg-cyan-300/10 px-3 text-sm font-semibold text-cyan-100 hover:text-white">
             <span>←</span>
-            返回首页
+            <span id="headerBackText">返回首页</span>
           </a>
           <span class="hidden max-w-full rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-medium leading-5 text-amber-200 sm:inline-flex">现场操作请听从教师指导</span>
         </div>
       </header>
 
+      <section id="teacherPreviewNotice" class="hidden"></section>
       <section id="deviceRoot" aria-live="polite"></section>
 
       <footer class="mt-8 break-words rounded-2xl border border-amber-300/25 bg-amber-300/10 p-4 text-sm leading-6 text-amber-100">
@@ -191,6 +192,43 @@
       return new URLSearchParams(window.location.search).get('id') || '';
     }
 
+    function isTeacherPreview() {
+      return new URLSearchParams(window.location.search).get('teacherPreview') === '1';
+    }
+
+    function getTeacherReturnUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('teacherReturn') || 'qr.html';
+    }
+
+    function setupTeacherPreviewShell() {
+      if (!isTeacherPreview()) return;
+      const returnUrl = getTeacherReturnUrl();
+      const safeReturnUrl = escapeHtml(returnUrl);
+      const logoLink = document.querySelector('#headerLogoLink');
+      const backLink = document.querySelector('#headerBackLink');
+      const backText = document.querySelector('#headerBackText');
+      const notice = document.querySelector('#teacherPreviewNotice');
+
+      logoLink.href = returnUrl;
+      logoLink.setAttribute('aria-label', '返回教师编辑页');
+      backLink.href = returnUrl;
+      backText.textContent = '返回教师编辑页';
+      notice.className = 'mb-5 rounded-3xl border border-cyan-300/30 bg-cyan-300/10 p-4 shadow-[0_0_28px_rgba(34,211,238,0.12)] sm:p-5';
+      notice.innerHTML = `
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p class="text-sm font-black text-cyan-100">教师预览模式</p>
+            <p class="mt-1 text-sm leading-6 text-slate-300">这里只用于查看学生端展示效果。返回后继续新增或编辑设备，不进入学生使用流程。</p>
+          </div>
+          <div class="flex flex-col gap-2 sm:flex-row">
+            <a href="${safeReturnUrl}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-cyan-300 px-4 py-2 text-sm font-black text-slate-950">返回继续编辑</a>
+            <a href="qr.html" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-600 bg-slate-900 px-4 py-2 text-sm font-bold text-slate-100">回教师首页</a>
+          </div>
+        </div>
+      `;
+    }
+
     function shouldResetAdmissionForDemo() {
       const params = new URLSearchParams(window.location.search);
       return ['demo', 'reset', 'resetAccess'].some(key => params.get(key) === '1');
@@ -206,10 +244,49 @@
       try {
         const response = await fetch('data/devices.json', { cache: 'no-store' });
         if (!response.ok) throw new Error('devices.json load failed');
-        return applyDeviceOverrides(await response.json());
+        return prepareDevices(await response.json());
       } catch (error) {
-        return applyDeviceOverrides(fallbackDevices);
+        return prepareDevices(fallbackDevices);
       }
+    }
+
+    function readJsonStorage(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (error) {
+        return fallback;
+      }
+    }
+
+    function readCustomDevices() {
+      return readJsonStorage('custom_devices', []);
+    }
+
+    function readDeletedDeviceIds() {
+      return readJsonStorage('deleted_device_ids', []);
+    }
+
+    function readPreviewDevice() {
+      const raw = new URLSearchParams(window.location.search).get('previewDevice');
+      if (!raw) return null;
+      try {
+        const text = raw.trim().startsWith('{') ? raw : decodeURIComponent(raw);
+        const device = JSON.parse(text);
+        if (!device || typeof device !== 'object' || !device.id) return null;
+        return device;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function prepareDevices(baseDevices) {
+      const deletedIds = new Set(readDeletedDeviceIds());
+      const merged = [...baseDevices, ...readCustomDevices()];
+      const previewDevice = readPreviewDevice();
+      if (previewDevice) merged.push(previewDevice);
+      const uniqueDevices = Array.from(new Map(merged.map(device => [device.id, device])).values());
+      return applyDeviceOverrides(uniqueDevices).filter(device => !deletedIds.has(device.id));
     }
 
     function applyDeviceOverrides(devices) {
@@ -719,6 +796,7 @@
     }
 
     async function init() {
+      setupTeacherPreviewShell();
       const deviceId = getDeviceId();
       if (deviceId && shouldResetAdmissionForDemo()) {
         clearAdmission(deviceId);
