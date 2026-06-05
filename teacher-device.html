@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="机设通 AI 教师设备信息编辑页。" />
-  <title>设备信息编辑 - 机设通 AI</title>
+  <meta name="description" content="贝尔智机通教师设备信息编辑页。" />
+  <title>设备信息编辑 - 贝尔智机通</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -57,7 +57,7 @@
     const fallbackDevices = [
       {
         id: 'robot-dog',
-        name: '机器狗',
+        name: '机械狗',
         category: '智能硬件 / 机器人设备',
         riskLevel: '中',
         description: '机器狗是一类四足机器人设备，可用于高校机械、自动化、机器人相关课程中的运动控制、路径规划、传感器识别和智能交互教学。',
@@ -69,8 +69,8 @@
       },
       {
         id: 'robot-arm',
-        name: '机械臂',
-        category: '机械控制设备',
+        name: '实验设备',
+        category: '自动化实验设备',
         riskLevel: '高',
         description: '机械臂用于机械控制、轨迹规划、夹取搬运、自动化生产线模拟和机器人控制教学。',
         scenarios: ['机械控制实验', '轨迹规划教学', '自动化搬运演示'],
@@ -81,8 +81,8 @@
       },
       {
         id: 'experiment-platform',
-        name: '实验教学平台',
-        category: '高校实验设备',
+        name: '火箭发射架',
+        category: '高校实验设备 / 发射架模型',
         riskLevel: '中',
         description: '实验教学平台用于课程实验、项目展示、传感器采集、机械系统综合实验和教学演示。',
         scenarios: ['课程实验教学', '传感器数据采集', '机械系统综合展示'],
@@ -486,7 +486,7 @@
           warnings: [],
           aiUrl: ''
         };
-        document.title = '新增设备 - 机设通 AI';
+        document.title = '新增设备 - 贝尔智机通';
         renderEditor(newDevice, 'new');
         return;
       }
@@ -499,7 +499,7 @@
       }
       const draftDevice = readPreviewDraft();
       const deviceForEdit = draftDevice && draftDevice.id === device.id ? { ...device, ...draftDevice } : device;
-      document.title = `${deviceForEdit.name} 信息编辑 - 机设通 AI`;
+      document.title = `${deviceForEdit.name} 信息编辑 - 贝尔智机通`;
       renderEditor(deviceForEdit);
     }
 
