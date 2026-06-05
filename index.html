@@ -56,7 +56,6 @@
         linear-gradient(90deg, rgba(34, 211, 238, 0.1) 1px, transparent 1px);
       background-size: 32px 32px, 32px 32px, 160px 160px, 160px 160px;
       mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.25));
-      animation: gridDrift 28s linear infinite;
     }
 
     .tech-bg::after {
@@ -66,7 +65,8 @@
       background:
         linear-gradient(115deg, transparent 0 38%, rgba(34, 211, 238, 0.08) 46%, transparent 56% 100%),
         radial-gradient(circle at 70% 42%, rgba(14, 165, 233, 0.14), transparent 18%);
-      animation: lightShift 16s ease-in-out infinite alternate;
+      animation: lightBreath 8s ease-in-out infinite;
+      will-change: opacity;
     }
 
     .tech-grid {
@@ -78,7 +78,19 @@
       opacity: 0.45;
     }
 
-    .scan-line,
+    .scan-line {
+      display: block;
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 1px;
+      width: 100%;
+      background: linear-gradient(90deg, transparent, rgba(103, 232, 249, 0.5), transparent);
+      opacity: 0.55;
+      animation: softScan 7s linear infinite;
+      will-change: transform, opacity;
+    }
+
     .particle {
       display: none;
     }
@@ -105,31 +117,33 @@
         linear-gradient(135deg, rgba(8, 47, 73, 0.7), rgba(2, 6, 23, 0.9));
     }
 
-    @keyframes modelFloat {
-      0%, 100% { transform: translateY(0) scale(1); }
-      50% { transform: translateY(-8px) scale(1.015); }
+    @keyframes lightBreath {
+      0%, 100% { opacity: 0.45; }
+      50% { opacity: 0.78; }
     }
 
-    @keyframes modelScan {
-      0%, 100% { transform: translateY(-80px); opacity: 0; }
-      18%, 72% { opacity: 1; }
-      50% { transform: translateY(210px); }
-    }
-
-    @keyframes gridDrift {
-      from { background-position: 0 0, 0 0, 0 0, 0 0; }
-      to { background-position: 32px 32px, 32px 32px, 80px 80px, 80px 80px; }
-    }
-
-    @keyframes lightShift {
-      from { opacity: 0.45; transform: translate3d(-2%, 0, 0); }
-      to { opacity: 0.9; transform: translate3d(2%, -1%, 0); }
+    @keyframes softScan {
+      0% { transform: translateY(-12vh); opacity: 0; }
+      12%, 82% { opacity: 0.55; }
+      100% { transform: translateY(108vh); opacity: 0; }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .tech-bg::before,
-      .tech-bg::after {
+      .tech-bg::after,
+      .scan-line {
         animation: none;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .tech-bg::after,
+      .tech-grid {
+        display: none;
+      }
+
+      .scan-line {
+        animation-duration: 10s;
+        opacity: 0.35;
       }
     }
   </style>
@@ -175,7 +189,7 @@
         </section>
 
         <div class="grid min-w-0 gap-5">
-          <section id="deviceExamples" class="min-w-0 rounded-3xl border border-cyan-300/20 bg-slate-900/75 p-4 shadow-glow backdrop-blur sm:p-5">
+          <section id="deviceExamples" class="min-w-0 rounded-3xl border border-cyan-300/20 bg-slate-900/90 p-4 sm:p-5">
             <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div class="min-w-0">
                 <h2 class="text-xl font-bold text-white">选择实验设备</h2>
@@ -197,7 +211,7 @@
     </section>
   </main>
 
-  <div id="scannerModal" class="fixed inset-0 z-50 hidden bg-slate-950/90 px-4 py-6 backdrop-blur">
+  <div id="scannerModal" class="fixed inset-0 z-50 hidden bg-slate-950/95 px-4 py-6">
     <div class="mx-auto flex min-h-full w-full max-w-lg items-center justify-center">
       <section class="w-full overflow-hidden rounded-3xl border border-cyan-300/30 bg-slate-900 shadow-glow">
         <div class="flex items-start justify-between gap-4 border-b border-slate-700 p-4">
@@ -223,7 +237,7 @@
     </div>
   </div>
 
-  <button id="assistantFloatBtn" type="button" class="assistant-float flex w-20 flex-col items-center gap-1 rounded-2xl border border-cyan-300/35 bg-slate-950/95 p-2 text-center shadow-[0_0_34px_rgba(34,211,238,0.3)] backdrop-blur transition hover:-translate-y-1 hover:border-cyan-200 sm:w-auto sm:flex-row sm:gap-3 sm:pr-4 sm:text-left" aria-label="打开问答助手">
+  <button id="assistantFloatBtn" type="button" class="assistant-float flex w-20 flex-col items-center gap-1 rounded-2xl border border-cyan-300/35 bg-slate-950/95 p-2 text-center shadow-[0_0_18px_rgba(34,211,238,0.22)] hover:border-cyan-200 sm:w-auto sm:flex-row sm:gap-3 sm:pr-4 sm:text-left" aria-label="打开问答助手">
     <span class="relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-cyan-200 via-sky-400 to-blue-700 shadow-[0_0_22px_rgba(34,211,238,0.35)] sm:h-14 sm:w-14">
       <span class="absolute -right-1 -top-1 h-4 w-4 rounded-full border-2 border-slate-950 bg-emerald-300"></span>
       <span class="grid h-10 w-10 place-items-center rounded-xl border border-white/55 bg-slate-950/20">
@@ -239,7 +253,7 @@
     </span>
   </button>
 
-  <div id="qaModal" class="fixed inset-0 z-50 hidden bg-slate-950/75 px-3 py-4 backdrop-blur-sm sm:px-6" role="dialog" aria-modal="true" aria-labelledby="qaModalTitle">
+  <div id="qaModal" class="fixed inset-0 z-50 hidden bg-slate-950/85 px-3 py-4 sm:px-6" role="dialog" aria-modal="true" aria-labelledby="qaModalTitle">
     <div id="qaBackdrop" class="absolute inset-0"></div>
     <section class="relative mx-auto flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-cyan-300/30 bg-slate-950 shadow-[0_0_54px_rgba(34,211,238,0.22)]">
       <div class="relative overflow-hidden border-b border-slate-700 bg-gradient-to-br from-slate-900 via-slate-900 to-cyan-950 p-4 sm:p-5">
@@ -485,9 +499,9 @@
     function renderDevices(devices) {
       const list = document.querySelector('#deviceList');
       list.innerHTML = devices.map((device) => `
-        <a href="device.html?id=${encodeURIComponent(device.id)}" class="group block min-h-32 rounded-2xl border border-slate-700 bg-slate-950/70 p-4 transition hover:-translate-y-1 hover:border-cyan-300/60 hover:bg-slate-900 hover:shadow-glow">
+        <a href="device.html?id=${encodeURIComponent(device.id)}" class="group block min-h-32 rounded-2xl border border-slate-700 bg-slate-950/80 p-4 hover:border-cyan-300/60 hover:bg-slate-900">
           <div class="device-thumb mb-4 overflow-hidden rounded-2xl border border-cyan-300/15">
-            <img src="${deviceModelAsset(device.id)}" alt="${device.name}机械模型缩略图" loading="lazy" decoding="async" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+            <img src="${deviceModelAsset(device.id)}" alt="${device.name}机械模型缩略图" loading="lazy" decoding="async" class="h-full w-full object-cover" />
           </div>
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="min-w-0">
@@ -496,7 +510,7 @@
             </div>
           </div>
           <p class="mt-3 break-words text-sm leading-6 text-slate-300">${device.description}</p>
-          <span class="mt-4 inline-flex min-h-10 items-center rounded-xl bg-cyan-300/10 px-3 py-2 text-sm font-bold text-cyan-100 transition group-hover:bg-cyan-300 group-hover:text-slate-950">进入设备页 <span class="ml-1 transition group-hover:translate-x-1">→</span></span>
+          <span class="mt-4 inline-flex min-h-10 items-center rounded-xl bg-cyan-300/10 px-3 py-2 text-sm font-bold text-cyan-100 group-hover:bg-cyan-300 group-hover:text-slate-950">进入设备页 <span class="ml-1">→</span></span>
         </a>
       `).join('');
 
