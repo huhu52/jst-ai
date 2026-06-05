@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="机设通 AI，高校机械实验设备扫码操作与智能问答助手。" />
-  <title>机设通 AI - 高校机械实验设备扫码操作与智能问答助手</title>
+  <meta name="description" content="贝尔智机通，高校机械实验设备扫码操作与智能问答助手。" />
+  <title>贝尔智机通 - 高校机械实验设备扫码操作与智能问答助手</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script>
@@ -98,6 +98,24 @@
       transition: none;
     }
 
+    .device-thumb {
+      aspect-ratio: 16 / 9;
+      background:
+        radial-gradient(circle at 50% 40%, rgba(34, 211, 238, 0.14), transparent 45%),
+        linear-gradient(135deg, rgba(8, 47, 73, 0.7), rgba(2, 6, 23, 0.9));
+    }
+
+    @keyframes modelFloat {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-8px) scale(1.015); }
+    }
+
+    @keyframes modelScan {
+      0%, 100% { transform: translateY(-80px); opacity: 0; }
+      18%, 72% { opacity: 1; }
+      50% { transform: translateY(210px); }
+    }
+
     @keyframes gridDrift {
       from { background-position: 0 0, 0 0, 0 0, 0 0; }
       to { background-position: 32px 32px, 32px 32px, 80px 80px, 80px 80px; }
@@ -129,18 +147,18 @@
 
     <section class="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 sm:px-8 sm:py-8 lg:px-10">
       <header class="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
-        <a href="index.html" class="flex items-center gap-3" aria-label="机设通 AI 首页">
-          <img src="assets/jst-logo.svg" alt="机设通 AI" class="h-14 w-auto max-w-[14rem] drop-shadow-[0_0_16px_rgba(34,211,238,0.18)]" />
+        <a href="index.html" class="flex items-center gap-3" aria-label="贝尔智机通首页">
+          <img src="assets/jst-logo.svg" alt="贝尔智机通" class="h-14 w-auto max-w-[14rem] drop-shadow-[0_0_16px_rgba(34,211,238,0.18)]" />
         </a>
         <div class="flex flex-wrap items-center gap-2">
           <span class="hidden rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-medium text-amber-200 sm:inline-flex">实验安全优先</span>
         </div>
       </header>
 
-      <div class="grid flex-1 items-start gap-8 py-12 sm:gap-10 sm:py-16 lg:grid-cols-[1fr_1fr] lg:items-center">
+      <div class="grid flex-1 items-start gap-8 py-12 sm:gap-10 sm:py-16 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
         <section class="min-w-0">
           <p class="mb-4 inline-block max-w-full break-all rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-sm leading-6 text-cyan-100 sm:break-words">高校机械实验设备扫码操作与智能问答助手</p>
-          <h1 class="max-w-3xl break-words text-[2.4rem] font-black leading-tight text-white sm:text-5xl lg:text-6xl">机设通 AI</h1>
+          <h1 class="max-w-3xl break-words text-[2.4rem] font-black leading-tight text-white sm:text-5xl lg:text-6xl">贝尔智机通</h1>
           <p class="mt-5 max-w-2xl break-words text-lg font-semibold leading-8 text-cyan-100 sm:text-2xl">
             <span class="block sm:inline">高校机械实验设备扫码操作</span>
             <span class="block sm:inline">与智能问答助手</span>
@@ -156,18 +174,20 @@
           </div>
         </section>
 
-        <section id="deviceExamples" class="min-w-0 rounded-3xl border border-cyan-300/20 bg-slate-900/75 p-4 shadow-glow backdrop-blur sm:p-5">
-          <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <div class="min-w-0">
-              <h2 class="text-xl font-bold text-white">选择实验设备</h2>
-              <p class="mt-1 text-sm leading-6 text-slate-400">
-                <span class="block">请选择当前要查看的实验设备。</span>
-                <span class="block">现场也可扫描设备旁二维码直接进入。</span>
-              </p>
+        <div class="grid min-w-0 gap-5">
+          <section id="deviceExamples" class="min-w-0 rounded-3xl border border-cyan-300/20 bg-slate-900/75 p-4 shadow-glow backdrop-blur sm:p-5">
+            <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div class="min-w-0">
+                <h2 class="text-xl font-bold text-white">选择实验设备</h2>
+                <p class="mt-1 text-sm leading-6 text-slate-400">
+                  <span class="block">请选择当前要查看的实验设备。</span>
+                  <span class="block">现场也可扫描设备旁二维码直接进入。</span>
+                </p>
+              </div>
             </div>
-          </div>
-          <div id="deviceList" class="grid gap-4" aria-live="polite"></div>
-        </section>
+            <div id="deviceList" class="grid gap-4" aria-live="polite"></div>
+          </section>
+        </div>
       </div>
 
       <footer id="safetyNotice" class="relative break-words rounded-3xl border border-amber-300/25 bg-gradient-to-br from-amber-300/15 to-slate-900/80 p-5 text-sm leading-7 text-amber-100 shadow-[0_0_28px_rgba(245,158,11,0.08)]">
@@ -236,7 +256,7 @@
             </div>
             <div class="min-w-0">
               <p class="text-xs font-semibold text-cyan-200">学生首页问答</p>
-              <h2 id="qaModalTitle" class="mt-1 break-words text-xl font-black text-white">机设通 AI 问答助手</h2>
+              <h2 id="qaModalTitle" class="mt-1 break-words text-xl font-black text-white">贝尔智机通问答助手</h2>
               <p class="mt-1 text-xs leading-5 text-slate-400">可询问扫码、设备选择、安全确认和基础使用流程</p>
             </div>
           </div>
@@ -253,7 +273,7 @@
         </div>
         <div id="chatBox" class="mt-4 grid max-h-[42vh] gap-3 overflow-y-auto rounded-2xl border border-slate-700 bg-slate-900/70 p-4 text-sm leading-7 text-slate-300">
           <div class="max-w-[92%] rounded-2xl rounded-bl-sm border border-cyan-300/20 bg-cyan-300/10 p-3 text-cyan-50">
-            我是机设通 AI 问答助手。你可以问如何扫码、如何选择设备、如何完成安全确认，也可以进入具体设备页后问设备相关问题。
+            我是贝尔智机通问答助手。你可以问如何扫码、如何选择设备、如何完成安全确认，也可以进入具体设备页后问设备相关问题。
           </div>
         </div>
       </div>
@@ -272,22 +292,22 @@
     const fallbackDevices = [
       {
         id: 'robot-dog',
-        name: '机器狗',
+        name: '机械狗',
         category: '智能硬件 / 机器人设备',
         riskLevel: '中',
         description: '用于机器人运动控制、智能交互和机械结构教学。'
       },
       {
         id: 'robot-arm',
-        name: '机械臂',
-        category: '机械控制设备',
+        name: '实验设备',
+        category: '自动化实验设备',
         riskLevel: '高',
         description: '用于机械控制、轨迹规划、夹取搬运和自动化实验教学。'
       },
       {
         id: 'experiment-platform',
-        name: '实验教学平台',
-        category: '高校实验设备',
+        name: '火箭发射架',
+        category: '高校实验设备 / 发射架模型',
         riskLevel: '中',
         description: '用于课程实验、项目展示、传感器采集和机械系统综合教学。'
       }
@@ -297,10 +317,34 @@
       try {
         const response = await fetch('data/devices.json', { cache: 'no-store' });
         if (!response.ok) throw new Error('devices.json load failed');
-        return applyDeviceOverrides(await response.json());
+        return prepareDevices(await response.json());
       } catch (error) {
-        return applyDeviceOverrides(fallbackDevices);
+        return prepareDevices(fallbackDevices);
       }
+    }
+
+    function readJsonStorage(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (error) {
+        return fallback;
+      }
+    }
+
+    function readCustomDevices() {
+      return readJsonStorage('custom_devices', []);
+    }
+
+    function readDeletedDeviceIds() {
+      return readJsonStorage('deleted_device_ids', []);
+    }
+
+    function prepareDevices(baseDevices) {
+      const deletedIds = new Set(readDeletedDeviceIds());
+      const merged = [...baseDevices, ...readCustomDevices()];
+      const uniqueDevices = Array.from(new Map(merged.map(device => [device.id, device])).values());
+      return applyDeviceOverrides(uniqueDevices).filter(device => !deletedIds.has(device.id));
     }
 
     function applyDeviceOverrides(devices) {
@@ -312,6 +356,15 @@
           return device;
         }
       });
+    }
+
+    function deviceModelAsset(deviceId) {
+      const modelMap = {
+        'robot-dog': 'assets/model-robot-dog.png',
+        'robot-arm': 'assets/model-experiment-device.png',
+        'experiment-platform': 'assets/model-rocket-frame.png'
+      };
+      return modelMap[deviceId] || 'assets/model-experiment-device.png';
     }
 
     let scannerStream = null;
@@ -433,6 +486,9 @@
       const list = document.querySelector('#deviceList');
       list.innerHTML = devices.map((device) => `
         <a href="device.html?id=${encodeURIComponent(device.id)}" class="group block min-h-32 rounded-2xl border border-slate-700 bg-slate-950/70 p-4 transition hover:-translate-y-1 hover:border-cyan-300/60 hover:bg-slate-900 hover:shadow-glow">
+          <div class="device-thumb mb-4 overflow-hidden rounded-2xl border border-cyan-300/15">
+            <img src="${deviceModelAsset(device.id)}" alt="${device.name}机械模型缩略图" loading="lazy" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+          </div>
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="min-w-0">
               <h3 class="break-words text-lg font-bold text-white group-hover:text-cyan-100">${device.name}</h3>
@@ -548,7 +604,7 @@
           answer: '点击首页的“扫描设备二维码”，允许摄像头权限后对准设备旁二维码即可。也可以上传二维码图片识别。'
         },
         {
-          keywords: ['选择设备', '设备', '机器狗', '机械臂', '实验教学平台'],
+          keywords: ['选择设备', '设备', '机械狗', '机器狗', '实验设备', '机械臂', '火箭发射架', '实验教学平台'],
           answer: '可以在首页“选择实验设备”区域进入对应设备页。现场使用时，也可以直接扫描设备旁二维码进入设备页。'
         },
         {
