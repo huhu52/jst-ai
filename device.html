@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="机设通 AI 设备详情页。" />
-  <title>设备详情 - 机设通 AI</title>
+  <meta name="description" content="贝尔智机通设备详情页。" />
+  <title>设备详情 - 贝尔智机通</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -73,6 +73,56 @@
       word-break: break-word;
     }
 
+    .device-model-stage {
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+      background:
+        radial-gradient(circle at 48% 24%, rgba(34, 211, 238, 0.18), transparent 35%),
+        linear-gradient(135deg, rgba(8, 47, 73, 0.86), rgba(2, 6, 23, 0.92));
+    }
+
+    .device-model-stage::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background:
+        linear-gradient(rgba(34, 211, 238, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34, 211, 238, 0.08) 1px, transparent 1px);
+      background-size: 24px 24px;
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.85), transparent 92%);
+    }
+
+    .device-model-stage::after {
+      content: "";
+      position: absolute;
+      left: -15%;
+      top: 12%;
+      height: 2px;
+      width: 130%;
+      background: linear-gradient(90deg, transparent, rgba(103, 232, 249, 0.82), transparent);
+      animation: modelScan 4.2s ease-in-out infinite;
+    }
+
+    .device-model-image {
+      width: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 24px 42px rgba(34, 211, 238, 0.16));
+      animation: modelFloat 6s ease-in-out infinite;
+    }
+
+    @keyframes modelFloat {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-8px) scale(1.015); }
+    }
+
+    @keyframes modelScan {
+      0%, 100% { transform: translateY(-70px); opacity: 0; }
+      18%, 72% { opacity: 1; }
+      50% { transform: translateY(250px); }
+    }
+
     @media (min-width: 640px) {
       .assistant-float {
         right: 1.75rem;
@@ -96,8 +146,8 @@
 
     <div class="relative mx-auto w-full max-w-5xl px-4 py-6 sm:px-8 lg:px-10">
       <header class="mb-8 flex flex-wrap items-center justify-between gap-3 sm:gap-4">
-        <a id="headerLogoLink" href="index.html" class="inline-flex items-center gap-3" aria-label="返回机设通 AI 首页">
-          <img src="assets/jst-logo.svg" alt="机设通 AI" class="h-12 w-auto max-w-[13rem] drop-shadow-[0_0_16px_rgba(34,211,238,0.18)]" />
+        <a id="headerLogoLink" href="index.html" class="inline-flex items-center gap-3" aria-label="返回贝尔智机通首页">
+          <img src="assets/jst-logo.svg" alt="贝尔智机通" class="h-12 w-auto max-w-[13rem] drop-shadow-[0_0_16px_rgba(34,211,238,0.18)]" />
         </a>
         <div class="flex items-center gap-2">
           <a id="headerBackLink" href="index.html" class="inline-flex min-h-10 items-center gap-2 rounded-xl border border-cyan-300/25 bg-cyan-300/10 px-3 text-sm font-semibold text-cyan-100 hover:text-white">
@@ -122,7 +172,7 @@
     const fallbackDevices = [
       {
         id: 'robot-dog',
-        name: '机器狗',
+        name: '机械狗',
         category: '智能硬件 / 机器人设备',
         riskLevel: '中',
         description: '机器狗是一类四足机器人设备，可用于高校机械、自动化、机器人相关课程中的运动控制、路径规划、传感器识别和智能交互教学。',
@@ -134,8 +184,8 @@
       },
       {
         id: 'robot-arm',
-        name: '机械臂',
-        category: '机械控制设备',
+        name: '实验设备',
+        category: '自动化实验设备',
         riskLevel: '高',
         description: '机械臂用于机械控制、轨迹规划、夹取搬运、自动化生产线模拟和机器人控制教学。',
         scenarios: ['机械控制实验', '轨迹规划教学', '自动化搬运演示'],
@@ -146,8 +196,8 @@
       },
       {
         id: 'experiment-platform',
-        name: '实验教学平台',
-        category: '高校实验设备',
+        name: '火箭发射架',
+        category: '高校实验设备 / 发射架模型',
         riskLevel: '中',
         description: '实验教学平台用于课程实验、项目展示、传感器采集、机械系统综合实验和教学演示。',
         scenarios: ['课程实验教学', '传感器数据采集', '机械系统综合展示'],
@@ -514,7 +564,7 @@
               </div>
               <div id="chatBox" class="mt-4 grid max-h-[42vh] gap-3 overflow-y-auto rounded-2xl border border-slate-700 bg-slate-900/70 p-4 text-sm leading-7 text-slate-300">
                 <div class="max-w-[92%] rounded-2xl rounded-bl-sm border border-cyan-300/20 bg-cyan-300/10 p-3 text-cyan-50">
-                  我是机设通 AI 设备安全助手。你可以问设备启动前检查、异常处理、使用结束注意事项等基础问题。
+                  我是贝尔智机通设备安全助手。你可以问设备启动前检查、异常处理、使用结束注意事项等基础问题。
                 </div>
               </div>
             </div>
@@ -531,26 +581,34 @@
       `;
     }
 
+    function deviceModelAsset(deviceId) {
+      const modelMap = {
+        'robot-dog': 'assets/model-robot-dog.png',
+        'robot-arm': 'assets/model-experiment-device.png',
+        'experiment-platform': 'assets/model-rocket-frame.png'
+      };
+      return modelMap[deviceId] || 'assets/model-experiment-device.png';
+    }
+
     function renderDevice(device) {
       const root = document.querySelector('#deviceRoot');
-      const aiButton = device.aiUrl
-        ? `<a href="${device.aiUrl}" target="_blank" rel="noopener" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-cyan-300 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-200 sm:w-auto">打开 AI 设备助手</a>`
-        : `<button type="button" disabled class="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-slate-700 bg-slate-800 px-5 py-3 text-sm font-bold text-slate-400 sm:w-auto">AI 设备助手待配置</button>`;
 
       root.innerHTML = `
         <section class="device-hero min-w-0 rounded-3xl border border-cyan-300/20 bg-slate-900/80 p-4 shadow-glow sm:p-7">
-          <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div class="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <div class="min-w-0">
               <p class="mb-3 inline-flex max-w-full break-words rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-sm leading-6 text-cyan-100">${device.category}</p>
               <h1 class="break-words text-2xl font-black leading-tight text-white sm:text-5xl">${device.name}</h1>
               <p class="device-description mt-4 break-all text-base leading-8 text-slate-300 sm:max-w-3xl sm:break-words">${device.description}</p>
+              <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+                <button id="startAskBtn" type="button" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-blue-500 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-400 sm:w-auto">开始安全准入</button>
+              </div>
+              <p class="mt-3 text-xs leading-5 text-slate-500">提示：提问前需完成安全确认。本页面不采集姓名、手机号、学号等个人信息。</p>
+            </div>
+            <div class="device-model-stage rounded-3xl border border-cyan-300/25 p-3 shadow-[0_0_44px_rgba(34,211,238,0.14)]">
+              <img src="${deviceModelAsset(device.id)}" alt="${device.name}机械模型展示" loading="lazy" class="device-model-image h-64 sm:h-80 lg:h-96" />
             </div>
           </div>
-          <div class="mt-6 flex flex-col gap-3 sm:flex-row">
-            <button id="startAskBtn" type="button" class="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-blue-500 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-400 sm:w-auto">开始安全准入</button>
-            ${aiButton}
-          </div>
-          <p class="mt-3 text-xs leading-5 text-slate-500">提示：提问前需完成安全确认。本页面不采集姓名、手机号、学号等个人信息。</p>
         </section>
 
         <div class="mt-6 grid gap-4 lg:grid-cols-2">
@@ -809,7 +867,7 @@
         renderNotFound(deviceId);
         return;
       }
-      document.title = `${device.name} - 机设通 AI`;
+      document.title = `${device.name} - 贝尔智机通`;
       renderDevice(device);
     }
 
