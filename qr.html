@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="机设通 AI 二维码部署页，供教师、实验员或项目维护人员复制设备链接并生成二维码。" />
-  <title>二维码部署页 - 机设通 AI</title>
+  <meta name="description" content="贝尔智机通二维码部署页，供教师、实验员或项目维护人员复制设备链接并生成二维码。" />
+  <title>二维码部署页 - 贝尔智机通</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
@@ -82,6 +82,14 @@
       display: none;
     }
 
+    .device-model-thumb {
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 35%, rgba(34, 211, 238, 0.16), transparent 46%),
+        linear-gradient(135deg, rgba(8, 47, 73, 0.74), rgba(2, 6, 23, 0.92));
+    }
+
     @keyframes gridDrift {
       from { background-position: 0 0, 0 0, 0 0, 0 0; }
       to { background-position: 32px 32px, 32px 32px, 80px 80px, 80px 80px; }
@@ -114,7 +122,7 @@
     <section class="relative mx-auto w-full max-w-6xl px-4 py-6 sm:px-8 lg:px-10">
       <header class="flex flex-wrap items-center justify-between gap-3">
         <div class="inline-flex min-h-10 items-center gap-3 text-sm font-semibold text-cyan-100">
-          <img src="assets/jst-logo.svg" alt="机设通 AI" class="h-14 w-auto max-w-[14rem] drop-shadow-[0_0_16px_rgba(34,211,238,0.18)]" />
+          <img src="assets/jst-logo.svg" alt="贝尔智机通" class="h-14 w-auto max-w-[14rem] drop-shadow-[0_0_16px_rgba(34,211,238,0.18)]" />
           <span class="hidden sm:inline">教师/实验员专用入口</span>
         </div>
         <span class="hidden rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100 sm:inline-flex">二维码部署页</span>
@@ -157,20 +165,20 @@
     const fallbackDevices = [
       {
         id: 'robot-dog',
-        name: '机器狗',
+        name: '机械狗',
         category: '智能硬件 / 机器人设备',
         riskLevel: '中'
       },
       {
         id: 'robot-arm',
-        name: '机械臂',
-        category: '机械控制设备',
+        name: '实验设备',
+        category: '自动化实验设备',
         riskLevel: '高'
       },
       {
         id: 'experiment-platform',
-        name: '实验教学平台',
-        category: '高校实验设备',
+        name: '火箭发射架',
+        category: '高校实验设备 / 发射架模型',
         riskLevel: '中'
       }
     ];
@@ -325,7 +333,7 @@
 
       const link = document.createElement('a');
       link.href = dataUrl;
-      link.download = `机设通AI-${device.id}-二维码.png`;
+      link.download = `贝尔智机通-${device.id}-二维码.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -368,6 +376,15 @@
       showPageMessage('已导出 devices.json。上传替换 GitHub 仓库 data/devices.json 后，别人电脑打开线上链接即可同步看到。');
     }
 
+    function deviceModelAsset(deviceId) {
+      const modelMap = {
+        'robot-dog': 'assets/model-robot-dog.png',
+        'robot-arm': 'assets/model-experiment-device.png',
+        'experiment-platform': 'assets/model-rocket-frame.png'
+      };
+      return modelMap[deviceId] || 'assets/model-experiment-device.png';
+    }
+
     function renderDevices(devices) {
       currentDevices = devices;
       const list = document.querySelector('#deviceQrList');
@@ -386,6 +403,9 @@
         return `
           <article class="grid min-w-0 gap-4 rounded-2xl border border-slate-700 bg-slate-950/70 p-4 lg:grid-cols-[1fr_auto] lg:items-start">
             <div class="min-w-0">
+              <div class="device-model-thumb mb-4 rounded-2xl border border-cyan-300/15">
+                <img src="${deviceModelAsset(device.id)}" alt="${device.name}机械模型展示" loading="lazy" class="h-full w-full object-cover" />
+              </div>
               <div class="flex flex-wrap items-start justify-between gap-3">
                 <div class="min-w-0">
                   <h3 class="break-words text-lg font-bold text-white">${device.name}</h3>
